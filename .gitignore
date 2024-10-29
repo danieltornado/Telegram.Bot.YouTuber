@@ -396,3 +396,10 @@ FodyWeavers.xsd
 
 # JetBrains Rider
 *.sln.iml
+
+# file: ~/.gitignore_global
+.DS_Store
+.idea
+
+# NLog
+/Telegram.Bot.YouTuber.Webhook/internal-nlog.txt

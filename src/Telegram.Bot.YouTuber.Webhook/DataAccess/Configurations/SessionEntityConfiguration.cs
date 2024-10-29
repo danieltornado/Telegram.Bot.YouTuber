@@ -1,0 +1,28 @@
+﻿using System.Text.Json;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using Telegram.Bot.YouTuber.Webhook.DataAccess.Entities;
+
+namespace Telegram.Bot.YouTuber.Webhook.DataAccess.Configurations;
+
+public sealed class SessionEntityConfiguration : IEntityTypeConfiguration<SessionEntity>
+{
+    #region Implementation of IEntityTypeConfiguration<SessionEntity>
+
+    public void Configure(EntityTypeBuilder<SessionEntity> builder)
+    {
+        builder
+            .Property(e => e.Json)
+            .HasColumnType("jsonb");
+        
+        builder
+            .Property(e => e.JsonVideo)
+            .HasColumnType("jsonb");
+        
+        builder
+            .Property(e => e.JsonAudio)
+            .HasColumnType("jsonb");
+    }
+
+    #endregion
+}

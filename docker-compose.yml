@@ -1,0 +1,6 @@
+﻿services:
+  telegram.bot.youtuber.webhook:
+    image: telegram.bot.youtuber.webhook
+    build:
+      context: .
+      dockerfile: src/Telegram.Bot.YouTuber.Webhook/Dockerfile
