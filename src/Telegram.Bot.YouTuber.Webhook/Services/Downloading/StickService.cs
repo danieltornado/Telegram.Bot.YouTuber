@@ -1,6 +1,7 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using FFMpegCore;
+using FFMpegCore.Enums;
 using Telegram.Bot.YouTuber.Core.Extensions;
 
 namespace Telegram.Bot.YouTuber.Webhook.Services.Downloading;
@@ -36,6 +37,7 @@ internal sealed class StickService : IStickService
             {
                 options.BinaryFolder = _binaryPath;
                 options.TemporaryFilesFolder = GetFFMpegTempPath();
+                options.LogLevel = FFMpegLogLevel.Quiet;
             })
             .CancellableThrough(ct)
             .ProcessAsynchronously();
