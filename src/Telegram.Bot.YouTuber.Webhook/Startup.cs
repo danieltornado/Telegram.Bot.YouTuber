@@ -1,4 +1,5 @@
-﻿using System.Reflection;
+﻿using System.Net;
+using System.Reflection;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
@@ -11,7 +12,12 @@ using Telegram.Bot.YouTuber.Core.Settings;
 using Telegram.Bot.YouTuber.Webhook.DataAccess;
 using Telegram.Bot.YouTuber.Webhook.Extensions;
 using Telegram.Bot.YouTuber.Webhook.Services;
+using Telegram.Bot.YouTuber.Webhook.Services.Downloading;
+using Telegram.Bot.YouTuber.Webhook.Services.Files;
 using Telegram.Bot.YouTuber.Webhook.Services.Hosted;
+using Telegram.Bot.YouTuber.Webhook.Services.Messaging;
+using Telegram.Bot.YouTuber.Webhook.Services.Questions;
+using Telegram.Bot.YouTuber.Webhook.Services.Sessions;
 
 namespace Telegram.Bot.YouTuber.Webhook;
 
@@ -55,6 +61,9 @@ public static class Startup
         builder.Services.Configure<RouteOptions>(options => { options.LowercaseUrls = true; });
         builder.Services.Configure<BotConfiguration>(builder.Configuration.GetSection(BotConfiguration.SectionName));
 
+        // Warn! Removing LoggingHttpMessageHandlerBuilderFilter only
+        builder.Services.RemoveAll<IHttpMessageHandlerBuilderFilter>();
+
         builder.Services
             .AddHttpClient("telegram_bot_client")
             .AddTypedClient<ITelegramBotClient>((httpClient, provider) =>
@@ -65,14 +74,38 @@ public static class Startup
                 return new TelegramBotClient(botToken, httpClient);
             });
 
-        // Warn! Removing LoggingHttpMessageHandlerBuilderFilter only
-        builder.Services.RemoveAll<IHttpMessageHandlerBuilderFilter>();
+        builder.Services
+            .AddHttpClient("youtube_delegating_client")
+            .ConfigurePrimaryHttpMessageHandler(() =>
+            {
+                HttpClientHandler httpClientHandler = new();
+                if (httpClientHandler.SupportsAutomaticDecompression)
+                    httpClientHandler.AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate;
+
+                return httpClientHandler;
+            });
 
         builder.Services
-            .AddScoped<ITelegramService, TelegramService>();
+            .AddTransient<YouTubeClient>();
 
-        builder.Services.AddHostedService<ActionService>();
-        builder.Services.AddHostedService<CleanService>();
+        builder.Services
+            .AddScoped<ITelegramService, TelegramService>()
+            .AddScoped<ISessionService, SessionService>()
+            .AddScoped<IDelegatingClientFactory, DelegatingClientFactory>()
+            .AddScoped<IQuestionService, QuestionService>()
+            .AddScoped<IDownloadService, DownloadService>();
+
+        builder.Services
+            .AddSingleton<IFileService, FileService>()
+            .AddSingleton<IKeyboardService, KeyboardService>()
+            .AddSingleton<IDownloadQueueService, DownloadQueueService>()
+            .AddSingleton<IQuestionQueueService, QuestionQueueService>()
+            .AddSingleton<IMessageService, MessageService>()
+            .AddSingleton<IStickService, StickService>();
+
+        builder.Services.AddHostedService<DownloadHostedService>();
+        builder.Services.AddHostedService<CleanHostedService>();
+        builder.Services.AddHostedService<QuestionHostedService>();
 
         return builder;
     }
@@ -82,7 +115,6 @@ public static class Startup
         var app = builder.Build();
 
         // Proxing nginx.
-        // Perhaps, can set environment variable: ASPNETCORE_FORWARDEDHEADERS_ENABLED=true
         app.UseForwardedHeaders(new ForwardedHeadersOptions
         {
             ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto

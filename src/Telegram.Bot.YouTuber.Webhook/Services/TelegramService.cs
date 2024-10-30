@@ -34,7 +34,7 @@ internal sealed class TelegramService : ITelegramService
         }
     }
 
-    public async Task SendKeyboardAsync(long? chatId, string text, IReplyMarkup replyMarkup, CancellationToken ct)
+    public async Task SendKeyboardAsync(long? chatId, int? replyToMessageId, string text, IReplyMarkup replyMarkup, CancellationToken ct)
     {
         if (!chatId.HasValue)
         {
@@ -44,7 +44,7 @@ internal sealed class TelegramService : ITelegramService
 
         try
         {
-            await _botClient.SendTextMessageAsync(chatId: chatId, text: text, replyMarkup: replyMarkup, parseMode: ParseMode.Html, cancellationToken: ct);
+            await _botClient.SendTextMessageAsync(chatId: chatId, text: text, replyMarkup: replyMarkup, parseMode: ParseMode.Html, replyToMessageId: replyToMessageId, cancellationToken: ct);
         }
         catch (Exception e)
         {

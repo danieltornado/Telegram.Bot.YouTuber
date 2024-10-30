@@ -1,5 +1,4 @@
-﻿using System.Text.Json;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Telegram.Bot.YouTuber.Webhook.DataAccess.Entities;
 
@@ -22,6 +21,13 @@ public sealed class SessionEntityConfiguration : IEntityTypeConfiguration<Sessio
         builder
             .Property(e => e.JsonAudio)
             .HasColumnType("jsonb");
+
+        builder
+            .HasMany(e => e.Media)
+            .WithOne(e => e.Session)
+            .HasForeignKey(e => e.SessionId)
+            .OnDelete(DeleteBehavior.Cascade);
+
     }
 
     #endregion
