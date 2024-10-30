@@ -7,11 +7,14 @@ namespace Telegram.Bot.YouTuber.Webhook.Services.Downloading;
 
 internal sealed class StickService : IStickService
 {
+    private readonly ILogger<StickService> _logger;
     private readonly string _tempPath;
     private readonly string _binaryPath;
 
-    public StickService(IConfiguration configuration)
+    public StickService(IConfiguration configuration, ILogger<StickService> logger)
     {
+        _logger = logger;
+
         // https://stackoverflow.com/questions/43709657/how-to-get-root-directory-of-project-in-asp-net-core-directory-getcurrentdirect
         var currentDirectory = Path.GetDirectoryName(Assembly.GetEntryAssembly()!.Location)!;
 
@@ -23,6 +26,8 @@ internal sealed class StickService : IStickService
 
     public async Task StickAsync(string videoPath, string audioPath, string destinationPath, CancellationToken ct)
     {
+        _logger.LogInformation("Started merging video");
+        
         await FFMpegArguments
             .FromFileInput(videoPath)
             .AddFileInput(audioPath)
@@ -33,6 +38,8 @@ internal sealed class StickService : IStickService
                 options.TemporaryFilesFolder = GetFFMpegTempPath();
             })
             .ProcessAsynchronously();
+        
+        _logger.LogInformation("Finished merging video");
     }
 
     #endregion

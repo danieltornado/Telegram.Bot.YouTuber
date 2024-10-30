@@ -17,7 +17,6 @@ public sealed class MessageController : ControllerBase
 {
     private readonly ISessionService _sessionService;
     private readonly IQuestionQueueService _questionQueueService;
-    private readonly IDownloadQueueService _downloadQueueService;
     private readonly IMessageService _messageService;
     private readonly ITelegramService _telegramService;
     private readonly ILogger<MessageController> _logger;
@@ -25,14 +24,12 @@ public sealed class MessageController : ControllerBase
     public MessageController(
         ISessionService sessionService,
         IQuestionQueueService questionQueueService,
-        IDownloadQueueService downloadQueueService,
         IMessageService messageService,
         ITelegramService telegramService,
         ILogger<MessageController> logger)
     {
         _sessionService = sessionService;
         _questionQueueService = questionQueueService;
-        _downloadQueueService = downloadQueueService;
         _messageService = messageService;
         _telegramService = telegramService;
         _logger = logger;
@@ -102,7 +99,7 @@ public sealed class MessageController : ControllerBase
         if (callbackQueryContext.Type == MediaType.Audio)
         {
             context.SetAudioAnswer(callbackQueryContext);
-            return await SendDownloadTask(context, ct);
+            return await SendQuestionTask(context, ct);
         }
 
         _logger.LogError("Unknown CallbackQuery");
@@ -118,17 +115,6 @@ public sealed class MessageController : ControllerBase
         context.PathBase = HttpContext.Request.PathBase;
 
         await _questionQueueService.QueueAsync(context, ct);
-
-        return Ok();
-    }
-
-    private async Task<IActionResult> SendDownloadTask(SessionContext context, CancellationToken ct)
-    {
-        context.Scheme = HttpContext.Request.Scheme;
-        context.Host = HttpContext.Request.Host;
-        context.PathBase = HttpContext.Request.PathBase;
-
-        await _downloadQueueService.QueueAsync(context, ct);
 
         return Ok();
     }
