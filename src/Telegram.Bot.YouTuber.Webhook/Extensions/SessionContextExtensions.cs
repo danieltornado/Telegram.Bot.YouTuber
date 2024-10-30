@@ -1,5 +1,4 @@
-﻿using Newtonsoft.Json;
-using Telegram.Bot.YouTuber.Webhook.DataAccess.Entities;
+﻿using Telegram.Bot.YouTuber.Webhook.DataAccess.Entities;
 using Telegram.Bot.YouTuber.Webhook.Services.Downloading;
 using Telegram.Bot.YouTuber.Webhook.Services.Messaging;
 using Telegram.Bot.YouTuber.Webhook.Services.Questions;
@@ -63,7 +62,7 @@ public static class SessionContextExtensions
             .Select(e => new QuestionButton
             {
                 Caption = $"{e.Format}  {e.Quality}",
-                Data = JsonConvert.SerializeObject(new QuestionData { Num = e.Num, Type = MediaType.Video, SessionId = context.Id })
+                Data = new QuestionData { Num = e.Num, Type = MediaType.Video, SessionId = context.Id }.ToCallbackQueryData()
             })
             .ToList();
 
@@ -76,7 +75,7 @@ public static class SessionContextExtensions
             .Select(e => new QuestionButton
             {
                 Caption = $"{e.Format}  {e.Quality}",
-                Data = JsonConvert.SerializeObject(new QuestionData { Num = e.Num, Type = MediaType.Audio, SessionId = context.Id })
+                Data = new QuestionData { Num = e.Num, Type = MediaType.Audio, SessionId = context.Id }.ToCallbackQueryData()
             })
             .ToList();
 

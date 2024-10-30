@@ -61,9 +61,6 @@ public static class Startup
         builder.Services.Configure<RouteOptions>(options => { options.LowercaseUrls = true; });
         builder.Services.Configure<BotConfiguration>(builder.Configuration.GetSection(BotConfiguration.SectionName));
 
-        // Warn! Removing LoggingHttpMessageHandlerBuilderFilter only
-        builder.Services.RemoveAll<IHttpMessageHandlerBuilderFilter>();
-
         builder.Services
             .AddHttpClient("telegram_bot_client")
             .AddTypedClient<ITelegramBotClient>((httpClient, provider) =>
@@ -84,6 +81,9 @@ public static class Startup
 
                 return httpClientHandler;
             });
+
+        // Warn! Removing LoggingHttpMessageHandlerBuilderFilter only
+        builder.Services.RemoveAll<IHttpMessageHandlerBuilderFilter>();
 
         builder.Services
             .AddTransient<YouTubeClient>();

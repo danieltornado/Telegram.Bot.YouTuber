@@ -47,7 +47,7 @@ internal sealed class DownloadService : IDownloadService
             await _youTubeClient.DownloadAsync(audio.InternalUrl, audioData.Stream, ct);
 
             // 3. ffmpeg
-            await using var finalData = _fileService.CreateFinalFile(context.Id);
+            await using var finalData = _fileService.CreateFinalFile(context.Id, video.Extension);
             await _stickService.StickAsync(videoData.FilePath, audioData.FilePath, finalData.FilePath, ct);
         }
         catch (Exception e)

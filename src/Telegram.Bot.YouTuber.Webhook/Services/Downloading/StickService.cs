@@ -1,13 +1,14 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using FFMpegCore;
+using Telegram.Bot.YouTuber.Core.Extensions;
 
 namespace Telegram.Bot.YouTuber.Webhook.Services.Downloading;
 
 internal sealed class StickService : IStickService
 {
     private readonly string _tempPath;
-    private readonly string? _binaryPath;
+    private readonly string _binaryPath;
 
     public StickService(IConfiguration configuration)
     {
@@ -15,7 +16,7 @@ internal sealed class StickService : IStickService
         var currentDirectory = Path.GetDirectoryName(Assembly.GetEntryAssembly()!.Location)!;
 
         _tempPath = Path.Combine(currentDirectory, "temp");
-        _binaryPath = configuration.GetValue<string>("FFMpegPath");
+        _binaryPath = configuration.GetValue<string>("FFMpegPath").AsNotNull();
     }
 
     #region Implementation of IStickService
@@ -28,11 +29,8 @@ internal sealed class StickService : IStickService
             .OutputToFile(destinationPath)
             .Configure(options =>
             {
-                if (!string.IsNullOrWhiteSpace(_binaryPath))
-                    options.BinaryFolder = _binaryPath;
-                
+                options.BinaryFolder = _binaryPath;
                 options.TemporaryFilesFolder = GetFFMpegTempPath();
-                options.UseCache = true;
             })
             .ProcessAsynchronously();
     }

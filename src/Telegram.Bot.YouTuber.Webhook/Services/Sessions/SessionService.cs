@@ -61,11 +61,7 @@ internal sealed class SessionService : ISessionService
 
         try
         {
-            var entity = _dbContext.Sessions.Local.FirstOrDefault(e => e.Id == id);
-            if (entity is null)
-            {
-                entity = await _dbContext.Sessions.Include(e => e.Media).FirstOrDefaultAsync(e => e.Id == id, ct);
-            }
+            var entity = await _dbContext.Sessions.Include(e => e.Media).FirstOrDefaultAsync(e => e.Id == id, ct);
 
             if (entity != null)
             {
@@ -83,39 +79,8 @@ internal sealed class SessionService : ISessionService
                 context.VideoId = entity.VideoId;
                 context.AudioId = entity.AudioId;
 
-                if (entity.Media != null)
-                {
-                    foreach (var media in entity.Media)
-                    {
-                        if (media.Type == MediaType.Video)
-                        {
-                            context.Videos.Add(new SessionMediaContext
-                            {
-                                Id = media.Id,
-                                Extension = media.Extension,
-                                Format = media.Format,
-                                Quality = media.Quality,
-                                InternalUrl = media.InternalUrl,
-                                Title = media.Title,
-                                Num = media.Num
-                            });
-                        }
-
-                        if (media.Type == MediaType.Audio)
-                        {
-                            context.Audios.Add(new SessionMediaContext
-                            {
-                                Id = media.Id,
-                                Extension = media.Extension,
-                                Format = media.Format,
-                                Quality = media.Quality,
-                                InternalUrl = media.InternalUrl,
-                                Title = media.Title,
-                                Num = media.Num
-                            });
-                        }
-                    }
-                }
+                FillMedia(context.Videos, entity, MediaType.Video);
+                FillMedia(context.Audios, entity, MediaType.Audio);
             }
             else
             {
@@ -157,7 +122,17 @@ internal sealed class SessionService : ISessionService
             var data = await query.FirstOrDefaultAsync(ct);
 
             if (data is not null)
-                title = data.Title + "." + data.Extension;
+            {
+                if (data.Extension.StartsWith("."))
+                {
+                    title = data.Title + data.Extension;
+                }
+                else
+                {
+                    title = data.Title + "." + data.Extension;
+                }
+            }
+                
         }
         catch (Exception e)
         {
@@ -173,11 +148,7 @@ internal sealed class SessionService : ISessionService
     {
         try
         {
-            var entity = _dbContext.Sessions.Local.FirstOrDefault(e => e.Id == sessionContext.Id);
-            if (entity is null)
-            {
-                entity = await _dbContext.Sessions.Include(e => e.Media).FirstOrDefaultAsync(e => e.Id == sessionContext.Id, ct);
-            }
+            var entity = await _dbContext.Sessions.Include(e => e.Media).FirstOrDefaultAsync(e => e.Id == sessionContext.Id, ct);
 
             if (entity is not null)
             {
@@ -196,11 +167,17 @@ internal sealed class SessionService : ISessionService
                 entity.UpdatedAt = DateTime.UtcNow;
                 entity.Error = sessionContext.Error?.ToString();
 
-                await MergeMedia(sessionContext.Videos, MediaType.Video, entity);
-                await MergeMedia(sessionContext.Audios, MediaType.Audio, entity);
+                await AddNewMedia(sessionContext.Videos, MediaType.Video, entity);
+                await AddNewMedia(sessionContext.Audios, MediaType.Audio, entity);
 
                 _dbContext.Update(entity);
                 await _dbContext.SaveChangesAsync(ct);
+
+                sessionContext.Videos.Clear();
+                sessionContext.Audios.Clear();
+
+                FillMedia(sessionContext.Videos, entity, MediaType.Video);
+                FillMedia(sessionContext.Audios, entity, MediaType.Audio);
             }
             else
             {
@@ -215,49 +192,54 @@ internal sealed class SessionService : ISessionService
         }
     }
 
-    private async Task MergeMedia(IReadOnlyList<SessionMediaContext> source, MediaType type, SessionEntity entity)
+    private async Task AddNewMedia(IReadOnlyList<SessionMediaContext> source, MediaType type, SessionEntity sessionEntity)
     {
-        if (entity.Media is null)
+        if (sessionEntity.Media is null)
         {
-            entity.Media = new List<MediaEntity>();
+            sessionEntity.Media = new List<MediaEntity>();
         }
 
         foreach (var mediaContext in source)
         {
-            var existMedia = entity.Media.FirstOrDefault(e => e.Id == mediaContext.Id);
-            if (existMedia is null)
+            if (mediaContext.Id == Guid.Empty)
             {
-                existMedia = new MediaEntity
+                var newMedia = new MediaEntity
                 {
                     Extension = mediaContext.Extension,
                     Format = mediaContext.Format,
                     Quality = mediaContext.Quality,
                     InternalUrl = mediaContext.InternalUrl,
-                    Id = mediaContext.Id,
                     Title = mediaContext.Title,
-                    SessionId = mediaContext.Id,
-                    Session = entity,
+                    SessionId = sessionEntity.Id,
                     Type = type,
                     Num = mediaContext.Num
                 };
-                
-                entity.Media.Add(existMedia);
-                await _dbContext.Media.AddAsync(existMedia);
-            }
-            else
-            {
-                existMedia.Extension = mediaContext.Extension;
-                existMedia.Format = mediaContext.Format;
-                existMedia.Quality = mediaContext.Quality;
-                existMedia.InternalUrl = mediaContext.InternalUrl;
-                existMedia.Id = mediaContext.Id;
-                existMedia.Title = mediaContext.Title;
-                existMedia.SessionId = mediaContext.Id;
-                existMedia.Session = entity;
-                existMedia.Type = type;
-                existMedia.Num = mediaContext.Num;
 
-                _dbContext.Media.Update(existMedia);
+                sessionEntity.Media.Add(newMedia);
+                await _dbContext.Media.AddAsync(newMedia);
+            }
+        }
+    }
+
+    private void FillMedia(ICollection<SessionMediaContext> target, SessionEntity sessionEntity, MediaType type)
+    {
+        if (sessionEntity.Media != null)
+        {
+            foreach (var mediaEntity in sessionEntity.Media)
+            {
+                if (mediaEntity.Type == type)
+                {
+                    target.Add(new SessionMediaContext
+                    {
+                        Id = mediaEntity.Id,
+                        Extension = mediaEntity.Extension,
+                        Format = mediaEntity.Format,
+                        Quality = mediaEntity.Quality,
+                        InternalUrl = mediaEntity.InternalUrl,
+                        Title = mediaEntity.Title,
+                        Num = mediaEntity.Num
+                    });
+                }
             }
         }
     }

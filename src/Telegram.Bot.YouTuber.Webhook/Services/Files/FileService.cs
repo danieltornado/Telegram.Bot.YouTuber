@@ -38,11 +38,17 @@ public sealed class FileService : IFileService
         };
     }
 
-    public FileData CreateFinalFile(Guid sessionId)
+    public FileData CreateFinalFile(Guid sessionId, string extension)
     {
+        // ffmpeg can ask for an extension of the output file
+        
         CheckFilesDirectory();
         string directory = GenerateSessionDirectory(sessionId);
-        string filePath = Path.Combine(directory, "final.tmp");
+        
+        if (extension.StartsWith("."))
+            extension = extension.Substring(1);
+        
+        string filePath = Path.Combine(directory, $"final.{extension}");
         return new FileData
         {
             Stream = new FileStream(filePath, FileMode.Create),
@@ -53,7 +59,8 @@ public sealed class FileService : IFileService
     public Stream? OpenFinalFile(Guid sessionId)
     {
         string directory = GetSessionDirectory(sessionId);
-        string filePath = Path.Combine(directory, "final.tmp");
+        // must be single
+        var filePath = Directory.EnumerateFiles(directory, "final.*").FirstOrDefault();
         if (File.Exists(filePath))
             return new FileStream(filePath, FileMode.Open);
 

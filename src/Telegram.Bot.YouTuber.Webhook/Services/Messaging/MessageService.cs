@@ -1,5 +1,4 @@
-﻿using Newtonsoft.Json;
-using Telegram.Bot.Types;
+﻿using Telegram.Bot.Types;
 using Telegram.Bot.YouTuber.Webhook.Extensions;
 using Telegram.Bot.YouTuber.Webhook.Services.Questions;
 
@@ -13,7 +12,7 @@ internal sealed class MessageService : IMessageService
     {
         _logger = logger;
     }
-    
+
     #region Implementation of IMessageService
 
     public Task<CallbackQueryContext> ParseCallbackQueryAsync(Update update, CancellationToken ct)
@@ -29,7 +28,7 @@ internal sealed class MessageService : IMessageService
             context.Error = new Exception("Invalid CallbackQuery");
             return context.AsTask();
         }
-        
+
         string? data = callbackQuery.Data;
 
         if (data is null)
@@ -42,21 +41,15 @@ internal sealed class MessageService : IMessageService
         try
         {
             var questionData = ParseData(data);
-            if (questionData is null)
-            {
-                context.IsSuccess = false;
-                context.Error = new Exception("Could not parse data");
-                return context.AsTask();
-            }
-            
+
             context.Type = questionData.Type;
             context.SessionId = questionData.SessionId;
             context.Num = questionData.Num;
         }
         catch (Exception e)
         {
-            _logger.LogError(e, "Error parsing data");
-            
+            _logger.LogError(e, "Error parsing {Data}", data);
+
             context.IsSuccess = false;
             context.Error = e;
             return context.AsTask();
@@ -67,8 +60,8 @@ internal sealed class MessageService : IMessageService
 
     #endregion
 
-    private QuestionData? ParseData(string data)
+    private QuestionData ParseData(string data)
     {
-        return JsonConvert.DeserializeObject<QuestionData>(data);
+        return QuestionData.FromCallbackQueryData(data);
     }
 }

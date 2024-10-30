@@ -2,6 +2,6 @@
 
 public sealed class QuestionButton
 {
-    public required string Caption { get; set; }
-    public required string Data { get; set; }
+    public required string Caption { get; init; }
+    public required string Data { get; init; }
 }
