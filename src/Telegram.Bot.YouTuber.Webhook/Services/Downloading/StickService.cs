@@ -37,6 +37,7 @@ internal sealed class StickService : IStickService
                 options.BinaryFolder = _binaryPath;
                 options.TemporaryFilesFolder = GetFFMpegTempPath();
             })
+            .CancellableThrough(ct)
             .ProcessAsynchronously();
         
         _logger.LogInformation("Finished merging video");
