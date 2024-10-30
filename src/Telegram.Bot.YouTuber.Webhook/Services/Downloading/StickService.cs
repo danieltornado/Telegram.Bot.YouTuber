@@ -32,7 +32,13 @@ internal sealed class StickService : IStickService
         await FFMpegArguments
             .FromFileInput(videoPath)
             .AddFileInput(audioPath)
-            .OutputToFile(destinationPath)
+            .OutputToFile(destinationPath, true,
+                options =>
+                {
+                    // https://superuser.com/questions/277642/how-to-merge-audio-and-video-file-in-ffmpeg
+                    // Copying the audio without re-encoding
+                    options.WithCustomArgument("-c copy");
+                })
             .Configure(options =>
             {
                 options.BinaryFolder = _binaryPath;
