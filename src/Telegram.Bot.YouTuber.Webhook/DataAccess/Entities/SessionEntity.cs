@@ -1,5 +1,4 @@
 ﻿using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
 using System.Diagnostics.CodeAnalysis;
 
 namespace Telegram.Bot.YouTuber.Webhook.DataAccess.Entities;
@@ -13,7 +12,7 @@ public sealed class SessionEntity
     public int? MessageId { get; set; }
     public DateTime CreatedAt { get; set; }
 
-    [MaxLength(2048)]
+    [MaxLength(AppDbConstants.URL_LENGTH)]
     public string? Url { get; set; }
 
     [SuppressMessage("ReSharper", "EntityFramework.ModelValidation.UnlimitedStringLength")]
@@ -37,4 +36,6 @@ public sealed class SessionEntity
     public Guid? AudioId { get; set; }
 
     public List<MediaEntity>? Media { get; set; }
+    
+    public List<DownloadingEntity>? Downloading { get; set; }
 }

@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Telegram.Bot.YouTuber.Webhook.Extensions;
+using Telegram.Bot.YouTuber.Webhook.Services.Downloading;
 using Telegram.Bot.YouTuber.Webhook.Services.Files;
 using Telegram.Bot.YouTuber.Webhook.Services.Sessions;
 
@@ -10,24 +11,29 @@ namespace Telegram.Bot.YouTuber.Webhook.Controllers;
 public sealed class FileController : ControllerBase
 {
     private readonly IFileService _fileService;
-    private readonly ISessionService _sessionService;
-    
-    public FileController(IFileService fileService, ISessionService sessionService)
+    private readonly IDownloadingService _downloadingService;
+    private readonly ILogger<FileController> _logger;
+
+    public FileController(IFileService fileService, IDownloadingService downloadingService, ILogger<FileController> logger)
     {
         _fileService = fileService;
-        _sessionService = sessionService;
+        _downloadingService = downloadingService;
+        _logger = logger;
     }
 
-    [HttpGet("{fileId}")]
-    public async Task<IActionResult> GetFile(string fileId, CancellationToken ct)
+    [HttpGet("{fileId:guid}")]
+    public async Task<IActionResult> GetFile(Guid fileId, CancellationToken ct)
     {
-        var sessionId = fileId.ToGuid();
-        if (sessionId is null)
+        var downloadingContext = await _downloadingService.GetDownloadingAsync(fileId, ct);
+        if (!downloadingContext.IsSuccess)
+        {
+            _logger.LogError(downloadingContext.Error, "Failed to get a file: {Id}", fileId);
             return BadRequest();
+        }
 
-        var title = await _sessionService.GetTitleAsync(sessionId.Value, ct);
+        string title = downloadingContext.GetTitleWithExtension();
 
-        var fileStream = _fileService.OpenFinalFile(sessionId.Value);
+        var fileStream = _fileService.OpenFinalFile(downloadingContext.Id);
         if (fileStream is null)
             return NotFound();
 

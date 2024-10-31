@@ -93,7 +93,8 @@ public static class Startup
             .AddScoped<ISessionService, SessionService>()
             .AddScoped<IDelegatingClientFactory, DelegatingClientFactory>()
             .AddScoped<IQuestionService, QuestionService>()
-            .AddScoped<IDownloadService, DownloadService>();
+            .AddScoped<IDownloadingClient, DownloadingClient>()
+            .AddScoped<IDownloadingService, DownloadingService>();
 
         builder.Services
             .AddSingleton<IFileService, FileService>()

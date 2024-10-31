@@ -1,6 +1,6 @@
 ﻿namespace Telegram.Bot.YouTuber.Webhook.Services.Sessions;
 
-public sealed class SessionContext
+public sealed class SessionContext : IContext
 {
     public Guid Id { get; set; }
     public long? ChatId { get; set; }
@@ -18,10 +18,16 @@ public sealed class SessionContext
 
     public List<SessionMediaContext> Audios { get; } = new();
 
-    public bool IsSuccess { get; set; }
-    public Exception? Error { get; set; }
-
     public string? Scheme { get; set; }
     public PathString PathBase { get; set; }
     public HostString Host { get; set; }
+    
+    public Guid? FileId { get; set; }
+
+    #region Implementation of IContext
+
+    public bool IsSuccess { get; set; }
+    public Exception? Error { get; set; }
+
+    #endregion
 }

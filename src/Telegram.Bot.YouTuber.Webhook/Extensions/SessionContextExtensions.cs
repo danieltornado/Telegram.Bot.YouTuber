@@ -32,9 +32,16 @@ public static class SessionContextExtensions
                 Quality = item.Quality,
                 InternalUrl = item.InternalUrl,
                 Title = item.Title,
-                Num = i
+                Num = i,
+                IsSkipped = false
             });
         }
+
+        context.Videos.Add(new SessionMediaContext
+        {
+            Num = items.Count,
+            IsSkipped = true
+        });
     }
 
     public static void SetAudioItems(this SessionContext context, IReadOnlyList<AudioInfo> items)
@@ -51,9 +58,16 @@ public static class SessionContextExtensions
                 Quality = item.Quality,
                 InternalUrl = item.InternalUrl,
                 Title = item.Title,
-                Num = i
+                Num = i,
+                IsSkipped = false
             });
         }
+
+        context.Audios.Add(new SessionMediaContext
+        {
+            Num = items.Count,
+            IsSkipped = true
+        });
     }
 
     public static List<QuestionButton> GetVideoButtons(this SessionContext context)
@@ -61,7 +75,7 @@ public static class SessionContextExtensions
         var buttons = context.Videos
             .Select(e => new QuestionButton
             {
-                Caption = $"{e.Format}  {e.Quality}",
+                Caption = e.GetQuestionButtonCaption(),
                 Data = new QuestionData { Num = e.Num, Type = MediaType.Video, SessionId = context.Id }.ToCallbackQueryData()
             })
             .ToList();
@@ -74,7 +88,7 @@ public static class SessionContextExtensions
         var buttons = context.Audios
             .Select(e => new QuestionButton
             {
-                Caption = $"{e.Format}  {e.Quality}",
+                Caption = e.GetQuestionButtonCaption(),
                 Data = new QuestionData { Num = e.Num, Type = MediaType.Audio, SessionId = context.Id }.ToCallbackQueryData()
             })
             .ToList();
@@ -102,5 +116,18 @@ public static class SessionContextExtensions
         }
 
         context.JsonAudio = messageContext.Json;
+    }
+
+    public static void ApplyExternalContext(this SessionContext sessionContext, QuestionContext context)
+    {
+        sessionContext.IsSuccess = context.IsSuccess;
+        sessionContext.Error = context.Error;
+    }
+
+    public static void ApplyExternalContext(this SessionContext sessionContext, DownloadingContext context)
+    {
+        sessionContext.IsSuccess = context.IsSuccess;
+        sessionContext.Error = context.Error;
+        sessionContext.FileId = context.Id;
     }
 }

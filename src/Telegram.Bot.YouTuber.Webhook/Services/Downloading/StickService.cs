@@ -25,6 +25,20 @@ internal sealed class StickService : IStickService
 
     #region Implementation of IStickService
 
+    public async Task ConvertVideoAsync(string videoPath, string destinationPath, CancellationToken ct)
+    {
+        await using var destinationStream = new FileStream(destinationPath, FileMode.Create);
+        await using var videoStream = new FileStream(videoPath, FileMode.Open);
+        await videoStream.CopyToAsync(destinationStream, ct);
+    }
+
+    public async Task ConvertAudioAsync(string audioPath, string destinationPath, CancellationToken ct)
+    {
+        await using var destinationStream = new FileStream(destinationPath, FileMode.Create);
+        await using var audioStream = new FileStream(audioPath, FileMode.Open);
+        await audioStream.CopyToAsync(destinationStream, ct);
+    }
+
     public async Task StickAsync(string videoPath, string audioPath, string destinationPath, CancellationToken ct)
     {
         _logger.LogInformation("Started merging video");

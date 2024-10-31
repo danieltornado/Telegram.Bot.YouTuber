@@ -100,7 +100,7 @@ public sealed class QuestionHostedService : BackgroundService
 
             await sessionService.CompleteSessionAsync(context, ct);
 
-            await telegramService.SendMessageAsync(context.ChatId, context.MessageId, "Internal server error", ct);
+            await telegramService.SendInternalServerErrorAsync(context.ChatId, context.MessageId, context.Error, ct);
         }
     }
 
@@ -110,14 +110,17 @@ public sealed class QuestionHostedService : BackgroundService
         var telegramService = serviceProvider.GetRequiredService<ITelegramService>();
 
         var questionService = serviceProvider.GetRequiredService<IQuestionService>();
+
         var questionContext = await questionService.GetAudioQuestionAsync(context, ct);
-        if (!questionContext.IsSuccess)
+        context.ApplyExternalContext(questionContext);
+
+        if (!context.IsSuccess)
         {
             _logger.LogError(questionContext.Error, "Failed to get an audio question");
 
             await sessionService.CompleteSessionAsync(context, ct);
 
-            await telegramService.SendMessageAsync(context.ChatId, context.MessageId, "Internal server error", ct);
+            await telegramService.SendInternalServerErrorAsync(context.ChatId, context.MessageId, context.Error, ct);
         }
         else
         {
@@ -139,7 +142,7 @@ public sealed class QuestionHostedService : BackgroundService
 
                 await sessionService.CompleteSessionAsync(context, ct);
 
-                await telegramService.SendMessageAsync(context.ChatId, context.MessageId, "Internal server error", ct);
+                await telegramService.SendInternalServerErrorAsync(context.ChatId, context.MessageId, context.Error, ct);
             }
         }
     }
@@ -150,14 +153,17 @@ public sealed class QuestionHostedService : BackgroundService
         var telegramService = serviceProvider.GetRequiredService<ITelegramService>();
 
         var questionService = serviceProvider.GetRequiredService<IQuestionService>();
+
         var questionContext = await questionService.GetVideoQuestionAsync(context, ct);
-        if (!questionContext.IsSuccess)
+        context.ApplyExternalContext(questionContext);
+
+        if (!context.IsSuccess)
         {
             _logger.LogError(questionContext.Error, "Failed to get a video question");
 
             await sessionService.CompleteSessionAsync(context, ct);
 
-            await telegramService.SendMessageAsync(context.ChatId, context.MessageId, "Internal server error", ct);
+            await telegramService.SendInternalServerErrorAsync(context.ChatId, context.MessageId, context.Error, ct);
         }
         else
         {
@@ -180,7 +186,7 @@ public sealed class QuestionHostedService : BackgroundService
 
                 await sessionService.CompleteSessionAsync(context, ct);
 
-                await telegramService.SendMessageAsync(context.ChatId, context.MessageId, "Internal server error", ct);
+                await telegramService.SendInternalServerErrorAsync(context.ChatId, context.MessageId, context.Error, ct);
             }
         }
     }

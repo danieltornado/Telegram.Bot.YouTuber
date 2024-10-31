@@ -8,5 +8,4 @@ public interface ISessionService
     Task<SessionContext> ReadSessionAsync(Guid id, Update update, CancellationToken ct);
     Task SaveSessionAsync(SessionContext sessionContext, CancellationToken ct);
     Task CompleteSessionAsync(SessionContext sessionContext, CancellationToken ct);
-    Task<string?> GetTitleAsync(Guid id, CancellationToken ct);
 }

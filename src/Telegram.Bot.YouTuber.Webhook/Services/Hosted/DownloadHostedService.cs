@@ -55,23 +55,32 @@ public sealed class DownloadHostedService : BackgroundService
         
         var telegramService = scope.ServiceProvider.GetRequiredService<ITelegramService>();
         
-        var downloadService = scope.ServiceProvider.GetRequiredService<IDownloadService>();
-        await downloadService.DownloadAsync(context, ct);
+        var downloadingClient = scope.ServiceProvider.GetRequiredService<IDownloadingClient>();
+        
+        var downloadingContext = await downloadingClient.DownloadAsync(context, ct);
+        context.ApplyExternalContext(downloadingContext);
         
         if (context.IsSuccess)
         {
-            var linkGenerator = scope.ServiceProvider.GetRequiredService<LinkGenerator>();
-            var link = linkGenerator.GenerateFileLink(context);
-            if (link is null)
+            if (downloadingContext.IsSkipped)
             {
-                context.IsSuccess = false;
-                context.Error = new Exception("Failed to generate link");
-
-                await telegramService.SendMessageAsync(context.ChatId, context.MessageId, "Internal server error", ct);
+                await telegramService.SendMessageAsync(context.ChatId, context.MessageId, "Nothing to download", ct);
             }
             else
             {
-                await telegramService.SendMessageAsync(context.ChatId, context.MessageId, link, ct);
+                var linkGenerator = scope.ServiceProvider.GetRequiredService<LinkGenerator>();
+                var link = linkGenerator.GenerateFileLink(context);
+                if (link is null)
+                {
+                    context.IsSuccess = false;
+                    context.Error = new Exception("Failed to generate link");
+
+                    await telegramService.SendInternalServerErrorAsync(context.ChatId, context.MessageId, context.Error, ct);
+                }
+                else
+                {
+                    await telegramService.SendMessageAsync(context.ChatId, context.MessageId, link, ct);
+                }    
             }
         }
         else

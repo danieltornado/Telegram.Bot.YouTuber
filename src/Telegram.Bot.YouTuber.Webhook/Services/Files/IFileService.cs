@@ -1,12 +1,10 @@
-﻿using System.Diagnostics.CodeAnalysis;
-
-namespace Telegram.Bot.YouTuber.Webhook.Services.Files;
+﻿namespace Telegram.Bot.YouTuber.Webhook.Services.Files;
 
 public interface IFileService
 {
-    FileData CreateVideoFile(Guid sessionId);
-    FileData CreateAudioFile(Guid sessionId);
-    FileData CreateFinalFile(Guid sessionId, string extension);
-    Stream? OpenFinalFile(Guid sessionId);
-    Task DeleteSessionAsync(Guid sessionId, CancellationToken ct);
+    string GenerateVideoFilePath(Guid fileId);
+    string GenerateAudioFilePath(Guid fileId);
+    string GenerateFinalFilePath(Guid fileId, string extension);
+    Stream? OpenFinalFile(Guid fileId);
+    Task DeleteDownloadingAsync(Guid downloadingId, CancellationToken ct);
 }

@@ -5,6 +5,7 @@ namespace Telegram.Bot.YouTuber.Webhook.DataAccess.Entities;
 
 public sealed class MediaEntity
 {
+    [Key]
     public Guid Id { get; set; }
 
     #region SessionEntity
@@ -22,20 +23,22 @@ public sealed class MediaEntity
     /// <remarks>Eliminates the need to use an identifier</remarks>
     public int Num { get; set; }
     
-    [MaxLength(1024)]
+    [MaxLength(AppDbConstants.TITLE_LENGTH)]
     public string? Title { get; set; }
 
-    [MaxLength(2048)]
-    public required string InternalUrl { get; set; }
+    [MaxLength(AppDbConstants.URL_LENGTH)]
+    public string? InternalUrl { get; set; }
 
     public MediaType Type { get; set; }
 
-    [MaxLength(32)]
-    public required string Quality { get; set; }
+    [MaxLength(AppDbConstants.QUALITY_LENGTH)]
+    public string? Quality { get; set; }
 
-    [MaxLength(16)]
-    public required string Format { get; set; }
+    [MaxLength(AppDbConstants.FORMAT_LENGTH)]
+    public string? Format { get; set; }
 
-    [MaxLength(8)]
-    public required string Extension { get; set; }
+    [MaxLength(AppDbConstants.EXTENSION_LENGTH)]
+    public string? Extension { get; set; }
+    
+    public bool IsSkipped { get; set; }
 }

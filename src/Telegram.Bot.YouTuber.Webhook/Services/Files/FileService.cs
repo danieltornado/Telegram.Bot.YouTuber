@@ -14,51 +14,39 @@ public sealed class FileService : IFileService
 
     #region Implementation of IFileService
 
-    public FileData CreateVideoFile(Guid sessionId)
+    public string GenerateVideoFilePath(Guid fileId)
     {
         CheckFilesDirectory();
-        string directory = GenerateSessionDirectory(sessionId);
+        string directory = GenerateSessionDirectory(fileId);
         string filePath = Path.Combine(directory, "video.tmp");
-        return new FileData
-        {
-            Stream = new FileStream(filePath, FileMode.Create),
-            FilePath = filePath
-        };
+        return filePath;
     }
 
-    public FileData CreateAudioFile(Guid sessionId)
+    public string GenerateAudioFilePath(Guid fileId)
     {
         CheckFilesDirectory();
-        string directory = GenerateSessionDirectory(sessionId);
+        string directory = GenerateSessionDirectory(fileId);
         string filePath = Path.Combine(directory, "audio.tmp");
-        return new FileData
-        {
-            Stream = new FileStream(filePath, FileMode.Create),
-            FilePath = filePath
-        };
+        return filePath;
     }
 
-    public FileData CreateFinalFile(Guid sessionId, string extension)
+    public string GenerateFinalFilePath(Guid fileId, string extension)
     {
         // ffmpeg can ask for an extension of the output file
-        
+
         CheckFilesDirectory();
-        string directory = GenerateSessionDirectory(sessionId);
-        
+        string directory = GenerateSessionDirectory(fileId);
+
         if (extension.StartsWith("."))
             extension = extension.Substring(1);
-        
+
         string filePath = Path.Combine(directory, $"final.{extension}");
-        return new FileData
-        {
-            Stream = new FileStream(filePath, FileMode.Create),
-            FilePath = filePath
-        };
+        return filePath;
     }
 
-    public Stream? OpenFinalFile(Guid sessionId)
+    public Stream? OpenFinalFile(Guid fileId)
     {
-        string directory = GetSessionDirectory(sessionId);
+        string directory = GetSessionDirectory(fileId);
         // must be single
         var filePath = Directory.EnumerateFiles(directory, "final.*").FirstOrDefault();
         if (File.Exists(filePath))
@@ -67,9 +55,9 @@ public sealed class FileService : IFileService
         return null;
     }
 
-    public Task DeleteSessionAsync(Guid sessionId, CancellationToken ct)
+    public Task DeleteDownloadingAsync(Guid downloadingId, CancellationToken ct)
     {
-        string directory = GetSessionDirectory(sessionId);
+        string directory = GetSessionDirectory(downloadingId);
         if (!Directory.Exists(directory))
             return Task.CompletedTask;
 
@@ -90,7 +78,7 @@ public sealed class FileService : IFileService
         if (!Directory.Exists(_filesDirectory))
             Directory.CreateDirectory(_filesDirectory);
     }
-    
+
     private string GenerateSessionDirectory(Guid id)
     {
         string directory = Path.Combine(_filesDirectory, id.ToString("D"));

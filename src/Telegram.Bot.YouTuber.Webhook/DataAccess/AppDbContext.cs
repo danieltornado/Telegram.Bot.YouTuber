@@ -15,6 +15,8 @@ public sealed class AppDbContext : DbContext
     public DbSet<SessionEntity> Sessions { get; private set; } = null!;
     
     public DbSet<MediaEntity> Media { get; private set; } = null!;
+    
+    public DbSet<DownloadingEntity> Downloading { get; private set; } = null!;
 
     #region Overrides of DbContext
 

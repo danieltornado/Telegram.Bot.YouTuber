@@ -28,6 +28,11 @@ public sealed class SessionEntityConfiguration : IEntityTypeConfiguration<Sessio
             .HasForeignKey(e => e.SessionId)
             .OnDelete(DeleteBehavior.Cascade);
 
+        builder
+            .HasMany(e => e.Downloading)
+            .WithOne(e => e.Session)
+            .HasForeignKey(e => e.SessionId)
+            .OnDelete(DeleteBehavior.Cascade);
     }
 
     #endregion

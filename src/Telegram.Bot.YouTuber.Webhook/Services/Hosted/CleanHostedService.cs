@@ -1,6 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Telegram.Bot.YouTuber.Webhook.DataAccess;
-using Telegram.Bot.YouTuber.Webhook.Extensions;
 using Telegram.Bot.YouTuber.Webhook.Services.Files;
 
 namespace Telegram.Bot.YouTuber.Webhook.Services.Hosted;
@@ -15,7 +14,7 @@ public sealed class CleanHostedService : BackgroundService
         _serviceProvider = serviceProvider;
         _logger = logger;
     }
-    
+
     #region Overrides of BackgroundService
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -27,7 +26,7 @@ public sealed class CleanHostedService : BackgroundService
             try
             {
                 await DoWorkAsync(stoppingToken);
-                
+
                 await Task.Delay(TimeSpan.FromHours(3), stoppingToken);
             }
             catch (TaskCanceledException)
@@ -45,27 +44,35 @@ public sealed class CleanHostedService : BackgroundService
     }
 
     #endregion
-    
+
     private async Task DoWorkAsync(CancellationToken ct)
     {
         _logger.LogInformation("Cleaning started");
 
         var minValue = DateTime.UtcNow.AddHours(-3);
-        
+
         using var scope = _serviceProvider.CreateScope();
         var fileService = scope.ServiceProvider.GetRequiredService<IFileService>();
         var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-        
-        var toDelete = await dbContext.Sessions.Where(e => e.UpdatedAt < minValue).ToListAsync(ct);
+
+        var toDelete = await dbContext.Sessions.Include(e => e.Downloading).Where(e => e.UpdatedAt < minValue).ToListAsync(ct);
         foreach (var sessionToDelete in toDelete)
         {
             dbContext.Remove(sessionToDelete);
-            
-            await fileService.DeleteSessionAsync(sessionToDelete.Id, ct);
+
+            if (sessionToDelete.Downloading != null)
+            {
+                foreach (var downloadingEntity in sessionToDelete.Downloading)
+                {
+                    dbContext.Remove(downloadingEntity);
+
+                    await fileService.DeleteDownloadingAsync(downloadingEntity.Id, ct);
+                }
+            }
         }
 
         await dbContext.SaveChangesAsync(ct);
-        
+
         _logger.LogInformation("Cleaning finished");
     }
 }

@@ -4,7 +4,6 @@ using Telegram.Bot.Types.Enums;
 using Telegram.Bot.YouTuber.Webhook.DataAccess.Entities;
 using Telegram.Bot.YouTuber.Webhook.Extensions;
 using Telegram.Bot.YouTuber.Webhook.Services;
-using Telegram.Bot.YouTuber.Webhook.Services.Downloading;
 using Telegram.Bot.YouTuber.Webhook.Services.Messaging;
 using Telegram.Bot.YouTuber.Webhook.Services.Questions;
 using Telegram.Bot.YouTuber.Webhook.Services.Sessions;
@@ -58,7 +57,14 @@ public sealed class MessageController : ControllerBase
 
             await _sessionService.CompleteSessionAsync(context, ct);
 
-            await _telegramService.SendMessageAsync(context.ChatId, context.MessageId, "Internal server error", ct);
+            await _telegramService.SendInternalServerErrorAsync(context.ChatId, context.MessageId, context.Error, ct);
+
+            return Ok();
+        }
+
+        if (update.Message?.Text == "/start")
+        {
+            await _sessionService.CompleteSessionAsync(context, ct);
 
             return Ok();
         }
@@ -85,7 +91,7 @@ public sealed class MessageController : ControllerBase
 
             await _sessionService.CompleteSessionAsync(context, ct);
 
-            await _telegramService.SendMessageAsync(context.ChatId, context.MessageId, "Internal server error", ct);
+            await _telegramService.SendInternalServerErrorAsync(context.ChatId, context.MessageId, context.Error, ct);
 
             return Ok();
         }
@@ -103,7 +109,7 @@ public sealed class MessageController : ControllerBase
         }
 
         _logger.LogError("Unknown CallbackQuery");
-        await _telegramService.SendMessageAsync(context.ChatId, context.MessageId, "Internal server error", ct);
+        await _telegramService.SendMessageAsync(context.ChatId, context.MessageId, "An incomprehensible message", ct);
 
         return Ok();
     }

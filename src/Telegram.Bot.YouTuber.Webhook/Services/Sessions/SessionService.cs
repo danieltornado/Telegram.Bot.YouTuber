@@ -58,15 +58,13 @@ internal sealed class SessionService : ISessionService
     {
         SessionContext context = new();
         context.IsSuccess = true;
+        context.Id = id;
 
         try
         {
             var entity = await _dbContext.Sessions.Include(e => e.Media).FirstOrDefaultAsync(e => e.Id == id, ct);
-
             if (entity != null)
             {
-                context.Id = entity.Id;
-
                 context.MessageId = entity.MessageId;
                 context.ChatId = entity.ChatId;
 
@@ -105,41 +103,6 @@ internal sealed class SessionService : ISessionService
     public Task CompleteSessionAsync(SessionContext sessionContext, CancellationToken ct)
     {
         return SaveSessionContextAsync(sessionContext, true, ct);
-    }
-
-    public async Task<string?> GetTitleAsync(Guid id, CancellationToken ct)
-    {
-        string? title = null;
-
-        try
-        {
-            var query = from s in _dbContext.Sessions
-                        join m in _dbContext.Media on s.Id equals m.SessionId
-                        where s.Id == id
-                        where s.VideoId == m.Id
-                        select new { m.Title, m.Extension };
-
-            var data = await query.FirstOrDefaultAsync(ct);
-
-            if (data is not null)
-            {
-                if (data.Extension.StartsWith("."))
-                {
-                    title = data.Title + data.Extension;
-                }
-                else
-                {
-                    title = data.Title + "." + data.Extension;
-                }
-            }
-                
-        }
-        catch (Exception e)
-        {
-            _logger.LogError(e, "Failed to get title");
-        }
-
-        return title;
     }
 
     #endregion
@@ -212,7 +175,8 @@ internal sealed class SessionService : ISessionService
                     Title = mediaContext.Title,
                     SessionId = sessionEntity.Id,
                     Type = type,
-                    Num = mediaContext.Num
+                    Num = mediaContext.Num,
+                    IsSkipped = mediaContext.IsSkipped
                 };
 
                 sessionEntity.Media.Add(newMedia);
@@ -237,7 +201,8 @@ internal sealed class SessionService : ISessionService
                         Quality = mediaEntity.Quality,
                         InternalUrl = mediaEntity.InternalUrl,
                         Title = mediaEntity.Title,
-                        Num = mediaEntity.Num
+                        Num = mediaEntity.Num,
+                        IsSkipped = mediaEntity.IsSkipped
                     });
                 }
             }
