@@ -39,4 +39,8 @@
     <ItemGroup>
         <InternalsVisibleTo Include="Telegram.Bot.YouTuber.Webhook.Tests"/>
     </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="DataAccess\Migrations\" />
+    </ItemGroup>
 </Project>
