@@ -1,4 +1,5 @@
-﻿using Telegram.Bot.YouTuber.Webhook.DataAccess.Entities;
+﻿using AutoMapper;
+using Telegram.Bot.YouTuber.Webhook.DataAccess.Entities;
 using Telegram.Bot.YouTuber.Webhook.Services.Downloading;
 using Telegram.Bot.YouTuber.Webhook.Services.Messaging;
 using Telegram.Bot.YouTuber.Webhook.Services.Questions;
@@ -18,25 +19,20 @@ public static class SessionContextExtensions
         return context.AudioId.HasValue;
     }
 
-    public static void SetVideoItems(this SessionContext context, IReadOnlyList<VideoInfo> items)
+    public static void SetVideoItems(this SessionContext context, IMapper mapper, IReadOnlyList<VideoInfo> items)
     {
         context.Videos.Clear();
         for (int i = 0; i < items.Count; i++)
         {
             var item = items[i];
 
-            context.Videos.Add(new SessionMediaContext
-            {
-                Extension = item.FileExtension,
-                Format = item.Format,
-                Quality = item.Quality,
-                InternalUrl = item.InternalUrl,
-                Title = item.Title,
-                Num = i,
-                IsSkipped = false
-            });
-        }
+            var mediaContext = mapper.Map<SessionMediaContext>(item);
+            mediaContext.Num = i;
+            mediaContext.IsSkipped = false;
 
+            context.Videos.Add(mediaContext);
+        }
+        
         context.Videos.Add(new SessionMediaContext
         {
             Num = items.Count,
@@ -44,23 +40,18 @@ public static class SessionContextExtensions
         });
     }
 
-    public static void SetAudioItems(this SessionContext context, IReadOnlyList<AudioInfo> items)
+    public static void SetAudioItems(this SessionContext context, IMapper mapper, IReadOnlyList<AudioInfo> items)
     {
         context.Audios.Clear();
         for (int i = 0; i < items.Count; i++)
         {
             var item = items[i];
+            
+            var mediaContext = mapper.Map<SessionMediaContext>(item);
+            mediaContext.Num = i;
+            mediaContext.IsSkipped = false;
 
-            context.Audios.Add(new SessionMediaContext
-            {
-                Extension = item.FileExtension,
-                Format = item.Format,
-                Quality = item.Quality,
-                InternalUrl = item.InternalUrl,
-                Title = item.Title,
-                Num = i,
-                IsSkipped = false
-            });
+            context.Audios.Add(mediaContext);
         }
 
         context.Audios.Add(new SessionMediaContext

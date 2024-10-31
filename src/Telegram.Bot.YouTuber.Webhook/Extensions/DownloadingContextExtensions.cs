@@ -25,22 +25,47 @@ public static class DownloadingContextExtensions
             }
         }
 
+        var title = context.GetTitle();
         if (sb.Length > 0)
         {
-            return $"{context.Title} ({sb}){extension}";
+            return $"{title} ({sb}){extension}";
         }
 
-        return $"{context.Title}{extension}";
+        return $"{title}{extension}";
     }
 
-    public static string GetExtensionWithPoint(this DownloadingContext context)
+    private static string GetExtensionWithPoint(this DownloadingContext context)
     {
-        if (string.IsNullOrWhiteSpace(context.Extension))
+        var extension = context.GetExtension();
+        
+        if (string.IsNullOrWhiteSpace(extension))
             return ".unknown";
 
-        if (context.Extension.StartsWith("."))
-            return context.Extension;
+        if (extension.StartsWith("."))
+            return extension;
 
-        return "." + context.Extension;
+        return "." + extension;
+    }
+    
+    private static string GetTitle(this DownloadingContext context)
+    {
+        return context.VideoTitle ?? context.AudioTitle ?? "Unknown";
+    }
+
+    private static string GetExtension(this DownloadingContext context)
+    {
+        if (!string.IsNullOrWhiteSpace(context.VideoExtension))
+            return context.VideoExtension;
+
+        if (!string.IsNullOrWhiteSpace(context.VideoFormat))
+            return context.VideoFormat.ToLowerInvariant();
+
+        if (!string.IsNullOrWhiteSpace(context.AudioExtension))
+            return context.AudioExtension;
+
+        if (!string.IsNullOrWhiteSpace(context.AudioFormat))
+            return context.AudioFormat.ToLowerInvariant();
+
+        return "unknown";
     }
 }

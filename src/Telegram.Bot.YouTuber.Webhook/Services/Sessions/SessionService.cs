@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using AutoMapper;
+using Microsoft.EntityFrameworkCore;
 using Telegram.Bot.Types;
 using Telegram.Bot.YouTuber.Webhook.DataAccess;
 using Telegram.Bot.YouTuber.Webhook.DataAccess.Entities;
@@ -9,12 +10,12 @@ namespace Telegram.Bot.YouTuber.Webhook.Services.Sessions;
 internal sealed class SessionService : ISessionService
 {
     private readonly AppDbContext _dbContext;
-    private readonly ILogger<SessionService> _logger;
+    private readonly IMapper _mapper;
 
-    public SessionService(AppDbContext dbContext, ILogger<SessionService> logger)
+    public SessionService(AppDbContext dbContext, IMapper mapper)
     {
         _dbContext = dbContext;
-        _logger = logger;
+        _mapper = mapper;
     }
 
     #region Implementation of ISessionService
@@ -65,20 +66,10 @@ internal sealed class SessionService : ISessionService
             var entity = await _dbContext.Sessions.Include(e => e.Media).FirstOrDefaultAsync(e => e.Id == id, ct);
             if (entity != null)
             {
-                context.MessageId = entity.MessageId;
-                context.ChatId = entity.ChatId;
+                _mapper.Map(entity, context);
 
-                context.Json = entity.Json;
-                context.JsonVideo = entity.JsonVideo;
-                context.JsonAudio = entity.JsonAudio;
-
-                context.Url = entity.Url;
-
-                context.VideoId = entity.VideoId;
-                context.AudioId = entity.AudioId;
-
-                FillMedia(context.Videos, entity, MediaType.Video);
-                FillMedia(context.Audios, entity, MediaType.Audio);
+                FillMediaToContext(context.Videos, entity, MediaType.Video);
+                FillMediaToContext(context.Audios, entity, MediaType.Audio);
             }
             else
             {
@@ -115,23 +106,16 @@ internal sealed class SessionService : ISessionService
 
             if (entity is not null)
             {
+                _mapper.Map(sessionContext, entity);
+
                 if (isCompleted)
                     entity.IsCompleted = true;
-
-                entity.Json = sessionContext.Json;
-                entity.JsonVideo = sessionContext.JsonVideo;
-                entity.JsonAudio = sessionContext.JsonAudio;
-
-                entity.Url = sessionContext.Url;
-
-                entity.VideoId = sessionContext.VideoId;
-                entity.AudioId = sessionContext.AudioId;
 
                 entity.UpdatedAt = DateTime.UtcNow;
                 entity.Error = sessionContext.Error?.ToString();
 
-                await AddNewMedia(sessionContext.Videos, MediaType.Video, entity);
-                await AddNewMedia(sessionContext.Audios, MediaType.Audio, entity);
+                await AddNewMediaToEntity(sessionContext.Videos, MediaType.Video, entity);
+                await AddNewMediaToEntity(sessionContext.Audios, MediaType.Audio, entity);
 
                 _dbContext.Update(entity);
                 await _dbContext.SaveChangesAsync(ct);
@@ -139,8 +123,9 @@ internal sealed class SessionService : ISessionService
                 sessionContext.Videos.Clear();
                 sessionContext.Audios.Clear();
 
-                FillMedia(sessionContext.Videos, entity, MediaType.Video);
-                FillMedia(sessionContext.Audios, entity, MediaType.Audio);
+                // MediaEntity has already got an Id
+                FillMediaToContext(sessionContext.Videos, entity, MediaType.Video);
+                FillMediaToContext(sessionContext.Audios, entity, MediaType.Audio);
             }
             else
             {
@@ -155,7 +140,7 @@ internal sealed class SessionService : ISessionService
         }
     }
 
-    private async Task AddNewMedia(IReadOnlyList<SessionMediaContext> source, MediaType type, SessionEntity sessionEntity)
+    private async Task AddNewMediaToEntity(IReadOnlyList<SessionMediaContext> source, MediaType type, SessionEntity sessionEntity)
     {
         if (sessionEntity.Media is null)
         {
@@ -166,18 +151,8 @@ internal sealed class SessionService : ISessionService
         {
             if (mediaContext.Id == Guid.Empty)
             {
-                var newMedia = new MediaEntity
-                {
-                    Extension = mediaContext.Extension,
-                    Format = mediaContext.Format,
-                    Quality = mediaContext.Quality,
-                    InternalUrl = mediaContext.InternalUrl,
-                    Title = mediaContext.Title,
-                    SessionId = sessionEntity.Id,
-                    Type = type,
-                    Num = mediaContext.Num,
-                    IsSkipped = mediaContext.IsSkipped
-                };
+                var newMedia = _mapper.Map<MediaEntity>(mediaContext);
+                newMedia.Type = type;
 
                 sessionEntity.Media.Add(newMedia);
                 await _dbContext.Media.AddAsync(newMedia);
@@ -185,7 +160,7 @@ internal sealed class SessionService : ISessionService
         }
     }
 
-    private void FillMedia(ICollection<SessionMediaContext> target, SessionEntity sessionEntity, MediaType type)
+    private void FillMediaToContext(ICollection<SessionMediaContext> target, SessionEntity sessionEntity, MediaType type)
     {
         if (sessionEntity.Media != null)
         {
@@ -193,17 +168,8 @@ internal sealed class SessionService : ISessionService
             {
                 if (mediaEntity.Type == type)
                 {
-                    target.Add(new SessionMediaContext
-                    {
-                        Id = mediaEntity.Id,
-                        Extension = mediaEntity.Extension,
-                        Format = mediaEntity.Format,
-                        Quality = mediaEntity.Quality,
-                        InternalUrl = mediaEntity.InternalUrl,
-                        Title = mediaEntity.Title,
-                        Num = mediaEntity.Num,
-                        IsSkipped = mediaEntity.IsSkipped
-                    });
+                    var sessionMediaContext = _mapper.Map<SessionMediaContext>(mediaEntity);
+                    target.Add(sessionMediaContext);
                 }
             }
         }

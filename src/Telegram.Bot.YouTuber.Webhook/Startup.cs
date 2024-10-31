@@ -86,6 +86,9 @@ public static class Startup
         builder.Services.RemoveAll<IHttpMessageHandlerBuilderFilter>();
 
         builder.Services
+            .AddAutoMapper(typeof(Startup));
+
+        builder.Services
             .AddTransient<YouTubeClient>();
 
         builder.Services
@@ -94,15 +97,15 @@ public static class Startup
             .AddScoped<IDelegatingClientFactory, DelegatingClientFactory>()
             .AddScoped<IQuestionService, QuestionService>()
             .AddScoped<IDownloadingClient, DownloadingClient>()
-            .AddScoped<IDownloadingService, DownloadingService>();
+            .AddScoped<IDownloadingService, DownloadingService>()
+            .AddScoped<IMessageService, MessageService>()
+            .AddScoped<IStickService, StickService>();
 
         builder.Services
             .AddSingleton<IFileService, FileService>()
             .AddSingleton<IKeyboardService, KeyboardService>()
             .AddSingleton<IDownloadQueueService, DownloadQueueService>()
-            .AddSingleton<IQuestionQueueService, QuestionQueueService>()
-            .AddSingleton<IMessageService, MessageService>()
-            .AddSingleton<IStickService, StickService>();
+            .AddSingleton<IQuestionQueueService, QuestionQueueService>();
 
         builder.Services.AddHostedService<DownloadHostedService>();
         builder.Services.AddHostedService<CleanHostedService>();

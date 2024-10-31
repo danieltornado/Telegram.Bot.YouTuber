@@ -9,22 +9,11 @@ public static class SessionMediaContextExtensions
         if (context.IsSkipped)
             return "SKIP";
 
-        return $"{context.Format?.ToUpperInvariant()}  {context.Quality}";
-    }
+        string format = context.Format?.ToUpperInvariant() ?? string.Empty;
+        string quality = context.Quality ?? string.Empty;
+        string contentLength = context.ContentLength.GetValueOrDefault().BytesToHuman();
 
-    public static string GetTitle(this SessionMediaContext context)
-    {
-        return context.Title ?? "Unknown";
-    }
-
-    public static string GetQuality(this SessionMediaContext context)
-    {
-        return context.Quality ?? "unknown";
-    }
-
-    public static string GetFormat(this SessionMediaContext context)
-    {
-        return context.Format ?? "unknown";
+        return $"{format} | {quality} | {contentLength}";
     }
 
     public static string GetExtension(this SessionMediaContext context)

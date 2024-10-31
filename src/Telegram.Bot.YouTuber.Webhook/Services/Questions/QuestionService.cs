@@ -1,4 +1,5 @@
-﻿using Telegram.Bot.YouTuber.Webhook.Extensions;
+﻿using AutoMapper;
+using Telegram.Bot.YouTuber.Webhook.Extensions;
 using Telegram.Bot.YouTuber.Webhook.Services.Downloading;
 using Telegram.Bot.YouTuber.Webhook.Services.Sessions;
 
@@ -7,10 +8,12 @@ namespace Telegram.Bot.YouTuber.Webhook.Services.Questions;
 internal sealed class QuestionService : IQuestionService
 {
     private readonly YouTubeClient _youTubeClient;
+    private readonly IMapper _mapper;
 
-    public QuestionService(YouTubeClient youTubeClient)
+    public QuestionService(YouTubeClient youTubeClient, IMapper mapper)
     {
         _youTubeClient = youTubeClient;
+        _mapper = mapper;
     }
     
     #region Implementation of IQuestionService
@@ -46,7 +49,7 @@ internal sealed class QuestionService : IQuestionService
             return questionContext;
         }
         
-        sessionContext.SetVideoItems(list);
+        sessionContext.SetVideoItems(_mapper, list);
         
         questionContext.Buttons = sessionContext.GetVideoButtons();
         
@@ -86,7 +89,7 @@ internal sealed class QuestionService : IQuestionService
             return questionContext;
         }
 
-        sessionContext.SetAudioItems(list);
+        sessionContext.SetAudioItems(_mapper, list);
         
         questionContext.Buttons = sessionContext.GetAudioButtons();
         questionContext.Title = "Audio";

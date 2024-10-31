@@ -2,12 +2,13 @@
 
 public sealed class SessionMediaContext
 {
-    public Guid Id { get; init; }
-    public required int Num { get; init; }
-    public string? Title { get; init; }
-    public string? InternalUrl { get; init; }
-    public string? Quality { get; init; }
-    public string? Format { get; init; }
-    public string? Extension { get; init; }
-    public required bool IsSkipped { get; init; }
+    public Guid Id { get; set; }
+    public int Num { get; set; }
+    public string? Title { get; set; }
+    public string? InternalUrl { get; set; }
+    public string? Quality { get; set; }
+    public string? Format { get; set; }
+    public string? Extension { get; set; }
+    public long? ContentLength { get; set; }
+    public bool IsSkipped { get; set; }
 }

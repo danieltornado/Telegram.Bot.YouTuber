@@ -1,7 +1,7 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using AutoMapper;
+using Microsoft.EntityFrameworkCore;
 using Telegram.Bot.YouTuber.Webhook.DataAccess;
 using Telegram.Bot.YouTuber.Webhook.DataAccess.Entities;
-using Telegram.Bot.YouTuber.Webhook.Extensions;
 using Telegram.Bot.YouTuber.Webhook.Services.Sessions;
 
 namespace Telegram.Bot.YouTuber.Webhook.Services.Downloading;
@@ -9,11 +9,13 @@ namespace Telegram.Bot.YouTuber.Webhook.Services.Downloading;
 internal sealed class DownloadingService : IDownloadingService
 {
     private readonly AppDbContext _dbContext;
+    private readonly IMapper _mapper;
     private readonly ILogger<DownloadingService> _logger;
 
-    public DownloadingService(AppDbContext dbContext, ILogger<DownloadingService> logger)
+    public DownloadingService(AppDbContext dbContext, IMapper mapper, ILogger<DownloadingService> logger)
     {
         _dbContext = dbContext;
+        _mapper = mapper;
         _logger = logger;
     }
 
@@ -31,12 +33,14 @@ internal sealed class DownloadingService : IDownloadingService
             VideoUrl = video.InternalUrl,
             VideoQuality = video.Quality,
             VideoFormat = video.Format,
+            VideoContentLength = video.ContentLength,
 
             AudioTitle = audio.Title,
             AudioExtension = audio.Extension,
             AudioUrl = audio.InternalUrl,
             AudioQuality = audio.Quality,
-            AudioFormat = audio.Format
+            AudioFormat = audio.Format,
+            AudioContentLength = audio.ContentLength
         };
 
         await _dbContext.Downloading.AddAsync(entity, ct);
@@ -80,14 +84,7 @@ internal sealed class DownloadingService : IDownloadingService
             var entity = await _dbContext.Downloading.FirstOrDefaultAsync(e => e.Id == downloadingId, ct);
             if (entity != null)
             {
-                context.Title = entity.GetTitle();
-                context.Extension = entity.GetExtension();
-
-                context.VideoQuality = entity.VideoQuality;
-                context.VideoFormat = entity.VideoFormat;
-
-                context.AudioQuality = entity.AudioQuality;
-                context.AudioFormat = entity.AudioFormat;
+                _mapper.Map(entity, context);
             }
             else
             {

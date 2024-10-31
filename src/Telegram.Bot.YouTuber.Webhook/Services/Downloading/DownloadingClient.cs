@@ -54,69 +54,54 @@ internal sealed class DownloadingClient : IDownloadingClient
             }
             else if (video.IsSkipped)
             {
-                downloadingContext.Title = audio.GetTitle();
-                downloadingContext.Extension = audio.GetExtension();
-
-                downloadingContext.AudioQuality = audio.GetQuality();
-                downloadingContext.AudioFormat = audio.GetFormat();
+                var extension = audio.GetExtension();
 
                 // 1. download audio
                 string audioPath = _fileService.GenerateAudioFilePath(downloadingId);
                 await using (var audioStream = new FileStream(audioPath, FileMode.Create))
                 {
-                    await _youTubeClient.DownloadAsync(audio.InternalUrl.AsNotNull(message: "Audio url"), audioStream, ct);
+                    await _youTubeClient.DownloadAsync(audio.InternalUrl.AsNotNull(message: "Audio url"), audio.ContentLength, audioStream, ct);
                 }
 
                 // 2. ffmpeg
-                string finalPath = _fileService.GenerateFinalFilePath(downloadingId, downloadingContext.Extension);
+                string finalPath = _fileService.GenerateFinalFilePath(downloadingId, extension);
                 await _stickService.ConvertAudioAsync(audioPath, finalPath, ct);
             }
             else if (audio.IsSkipped)
             {
-                downloadingContext.Title = video.GetTitle();
-                downloadingContext.Extension = video.GetExtension();
-
-                downloadingContext.VideoQuality = video.GetQuality();
-                downloadingContext.VideoFormat = video.GetFormat();
+                var extension = video.GetExtension();
 
                 // 1. download video
                 string videoPath = _fileService.GenerateVideoFilePath(downloadingId);
                 await using (var videoStream = new FileStream(videoPath, FileMode.Create))
                 {
-                    await _youTubeClient.DownloadAsync(video.InternalUrl.AsNotNull(message: "Video url"), videoStream, ct);
+                    await _youTubeClient.DownloadAsync(video.InternalUrl.AsNotNull(message: "Video url"), video.ContentLength, videoStream, ct);
                 }
 
                 // 2. ffmpeg
-                string finalPath = _fileService.GenerateFinalFilePath(downloadingId, downloadingContext.Extension);
+                string finalPath = _fileService.GenerateFinalFilePath(downloadingId, extension);
                 await _stickService.ConvertVideoAsync(videoPath, finalPath, ct);
             }
             else
             {
-                downloadingContext.Title = video.GetTitle();
-                downloadingContext.Extension = video.GetExtension();
-
-                downloadingContext.VideoQuality = video.GetQuality();
-                downloadingContext.VideoFormat = video.GetFormat();
-
-                downloadingContext.AudioQuality = audio.GetQuality();
-                downloadingContext.AudioFormat = audio.GetFormat();
+                var extension = video.GetExtension();
 
                 // 1. download video
                 string videoPath = _fileService.GenerateVideoFilePath(downloadingId);
                 await using (var videoStream = new FileStream(videoPath, FileMode.Create))
                 {
-                    await _youTubeClient.DownloadAsync(video.InternalUrl.AsNotNull(message: "Video url"), videoStream, ct);
+                    await _youTubeClient.DownloadAsync(video.InternalUrl.AsNotNull(message: "Video url"), video.ContentLength, videoStream, ct);
                 }
 
                 // 2. download audio
                 string audioPath = _fileService.GenerateAudioFilePath(downloadingId);
                 await using (var audioStream = new FileStream(audioPath, FileMode.Create))
                 {
-                    await _youTubeClient.DownloadAsync(audio.InternalUrl.AsNotNull(message: "Audio url"), audioStream, ct);
+                    await _youTubeClient.DownloadAsync(audio.InternalUrl.AsNotNull(message: "Audio url"), audio.ContentLength, audioStream, ct);
                 }
 
                 // 3. ffmpeg
-                string finalPath = _fileService.GenerateFinalFilePath(downloadingId, downloadingContext.Extension);
+                string finalPath = _fileService.GenerateFinalFilePath(downloadingId, extension);
                 await _stickService.StickAsync(videoPath, audioPath, finalPath, ct);
             }
         }

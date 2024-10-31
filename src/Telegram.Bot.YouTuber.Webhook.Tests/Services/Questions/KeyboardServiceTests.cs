@@ -8,13 +8,14 @@ public sealed class KeyboardServiceTests
     [Theory]
     [InlineData(1, 1)]
     [InlineData(2, 1)]
-    [InlineData(3, 1)]
+    [InlineData(3, 2)]
     [InlineData(4, 2)]
-    [InlineData(5, 2)]
-    [InlineData(6, 2)]
-    [InlineData(7, 3)]
-    [InlineData(8, 3)]
-    [InlineData(9, 3)]
+    [InlineData(5, 3)]
+    [InlineData(6, 3)]
+    [InlineData(7, 4)]
+    [InlineData(8, 4)]
+    [InlineData(9, 5)]
+    [InlineData(10, 5)]
     public void WhenSomeButtons_GetQuestionKeyboard_ShouldCreateSomeLine(int countOfButtons, int countOfLines)
     {
         // Arrange

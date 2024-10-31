@@ -40,5 +40,7 @@ public sealed class MediaEntity
     [MaxLength(AppDbConstants.EXTENSION_LENGTH)]
     public string? Extension { get; set; }
     
+    public long? ContentLength { get; set; }
+    
     public bool IsSkipped { get; set; }
 }

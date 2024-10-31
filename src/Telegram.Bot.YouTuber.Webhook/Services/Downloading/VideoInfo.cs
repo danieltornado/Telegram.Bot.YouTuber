@@ -2,9 +2,10 @@
 
 public sealed class VideoInfo
 {
-    public required string Title { get; init; }
-    public required string Format { get; init; }
-    public required string Quality { get; init; }
-    public required string FileExtension { get; init; }
-    public required string InternalUrl { get; init; }
+    public required string Title { get; set; }
+    public required string Format { get; set; }
+    public required string Quality { get; set; }
+    public required string FileExtension { get; set; }
+    public required string InternalUrl { get; set; }
+    public required long? ContentLength { get; set; }
 }

@@ -26,13 +26,15 @@ public sealed class DownloadingEntity
 
     [MaxLength(AppDbConstants.QUALITY_LENGTH)]
     public string? VideoQuality { get; set; }
-    
+
     [MaxLength(AppDbConstants.FORMAT_LENGTH)]
     public string? VideoFormat { get; set; }
 
     [MaxLength(AppDbConstants.EXTENSION_LENGTH)]
     public string? VideoExtension { get; set; }
-    
+
+    public long? VideoContentLength { get; set; }
+
     [MaxLength(AppDbConstants.TITLE_LENGTH)]
     public string? AudioTitle { get; set; }
 
@@ -41,12 +43,14 @@ public sealed class DownloadingEntity
 
     [MaxLength(AppDbConstants.QUALITY_LENGTH)]
     public string? AudioQuality { get; set; }
-    
+
     [MaxLength(AppDbConstants.FORMAT_LENGTH)]
     public string? AudioFormat { get; set; }
 
     [MaxLength(AppDbConstants.EXTENSION_LENGTH)]
     public string? AudioExtension { get; set; }
+
+    public long? AudioContentLength { get; set; }
 
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }

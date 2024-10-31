@@ -1,4 +1,5 @@
 ﻿using System.Net.Http.Headers;
+using AutoMapper;
 using Telegram.Bot.YouTuber.Webhook.Extensions;
 using VideoLibrary;
 
@@ -8,22 +9,30 @@ public sealed class YouTubeClient : YouTube
 {
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly IDelegatingClientFactory _delegatingClientFactory;
+    private readonly IMapper _mapper;
 
-    public YouTubeClient(IHttpClientFactory httpClientFactory, IDelegatingClientFactory delegatingClientFactory)
+    public YouTubeClient(IHttpClientFactory httpClientFactory, IDelegatingClientFactory delegatingClientFactory, IMapper mapper)
     {
         _httpClientFactory = httpClientFactory;
         _delegatingClientFactory = delegatingClientFactory;
+        _mapper = mapper;
     }
 
-    public async Task DownloadAsync(string internalUrl, Stream destination, CancellationToken ct)
+    public async Task DownloadAsync(string internalUrl, long? contentLength, Stream destination, CancellationToken ct)
     {
         const long chunkSize = 10_485_760;
 
         var httpClient = MakeClient();
 
-        long size = await GetContentLengthAsync(httpClient, internalUrl, ct) ?? 0;
-        if (size < 1)
-            throw new ArgumentException("Wrong size value", nameof(size));
+        if (!contentLength.HasValue)
+        {
+            contentLength = await GetContentLengthAsync(httpClient, internalUrl, ct);
+        }
+
+        if (!contentLength.HasValue || contentLength.Value < 1)
+            throw new ArgumentException("Could not get content length", nameof(contentLength));
+
+        long size = contentLength.Value;
 
         var segmentCount = (int)Math.Ceiling(1.0 * size / chunkSize);
         for (var i = 0; i < segmentCount; i++)
@@ -119,27 +128,19 @@ public sealed class YouTubeClient : YouTube
     {
         string internalUrl = await GetInternalUrlAsync(video);
 
-        return new VideoInfo
-        {
-            Format = video.Format.ToString(),
-            Quality = video.Resolution.ToString(),
-            Title = video.Title,
-            InternalUrl = internalUrl,
-            FileExtension = video.FileExtension
-        };
+        var info = _mapper.Map<VideoInfo>(video);
+        info.InternalUrl = internalUrl;
+
+        return info;
     }
 
     private async Task<AudioInfo> ToAudioInfo(YouTubeVideo audio)
     {
         string internalUrl = await GetInternalUrlAsync(audio);
 
-        return new AudioInfo
-        {
-            Format = audio.AudioFormat.ToString(),
-            Quality = audio.AudioBitrate.ToString(),
-            Title = audio.Title,
-            InternalUrl = internalUrl,
-            FileExtension = audio.FileExtension
-        };
+        var info = _mapper.Map<AudioInfo>(audio);
+        info.InternalUrl = internalUrl;
+        
+        return info;
     }
 }
