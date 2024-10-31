@@ -14,6 +14,9 @@ public sealed class SessionProfile : Profile
         CreateMap<SessionContext, SessionEntity>()
             .ForMember(dest => dest.Error, e => e.Ignore());
 
+        CreateMap<SessionEntity, SessionContext>()
+            .ForMember(dest => dest.Error, e => e.Ignore());
+
         CreateMap<VideoInfo, SessionMediaContext>()
             .ForMember(dest => dest.Extension, e => e.MapFrom(src => src.FileExtension));
         
