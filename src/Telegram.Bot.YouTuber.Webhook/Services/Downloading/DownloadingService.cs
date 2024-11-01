@@ -21,12 +21,12 @@ internal sealed class DownloadingService : IDownloadingService
 
     #region Implementation of IDownloadingService
 
-    public async Task<Guid> StartDownloadingAsync(SessionContext sessionContext, SessionMediaContext video, SessionMediaContext audio, CancellationToken ct)
+    public async Task<Guid> StartDownloadingAsync(Guid sessionId, SessionMediaContext video, SessionMediaContext audio, CancellationToken ct)
     {
         DownloadingEntity entity = new()
         {
             CreatedAt = DateTime.UtcNow,
-            SessionId = sessionContext.Id,
+            SessionId = sessionId,
 
             VideoTitle = video.Title,
             VideoExtension = video.Extension,
@@ -49,59 +49,50 @@ internal sealed class DownloadingService : IDownloadingService
         return entity.Id;
     }
 
-    public async Task CompleteDownloadingAsync(DownloadingContext context, CancellationToken ct)
+    public async Task CompleteDownloadingAsync(Guid downloadingId, CancellationToken ct)
     {
         // Do not set Failed state because it does not matter
 
         try
         {
-            var entity = await _dbContext.Downloading.FirstOrDefaultAsync(e => e.Id == context.Id, ct);
-            if (entity is null)
-            {
-                _logger.LogError("The downloading entity was not found: {Id}", context.Id);
-            }
-            else
-            {
-                entity.UpdatedAt = DateTime.UtcNow;
-                entity.IsCompleted = true;
-                entity.Error = context.Error?.ToString();
-            }
+            await _dbContext.Downloading
+                .Where(e => e.Id == downloadingId)
+                .ExecuteUpdateAsync(e =>
+                        e.SetProperty(s => s.UpdatedAt, DateTime.UtcNow).SetProperty(s => s.IsCompleted, true),
+                    ct);
         }
         catch (Exception e)
         {
-            _logger.LogError(e, "Failed to complete session: {Id}", context.Id);
+            _logger.LogError(e, "Failed to complete downloading: {Id}", downloadingId);
         }
     }
 
-    public async Task<DownloadingContext> GetDownloadingAsync(Guid downloadingId, CancellationToken ct)
+    public async Task<DownloadingContext?> GetDownloadingAsync(Guid downloadingId, CancellationToken ct)
     {
-        DownloadingContext context = new();
-        context.IsSuccess = true;
-        context.Id = downloadingId;
+        var entity = await _dbContext.Downloading.FirstOrDefaultAsync(e => e.Id == downloadingId, ct);
+        if (entity != null)
+        {
+            return _mapper.Map<DownloadingContext>(entity);
+        }
 
+        return null;
+    }
+
+    public async Task SetFailedDownloadingAsync(Guid downloadingId, string error, CancellationToken ct)
+    {
         try
         {
-            var entity = await _dbContext.Downloading.FirstOrDefaultAsync(e => e.Id == downloadingId, ct);
-            if (entity != null)
-            {
-                _mapper.Map(entity, context);
-            }
-            else
-            {
-                context.IsSuccess = false;
-                context.Error = new Exception("The entity was not found");
-            }
+            await _dbContext.Downloading
+                .Where(e => e.Id == downloadingId)
+                .ExecuteUpdateAsync(e =>
+                        e.SetProperty(s => s.UpdatedAt, DateTime.UtcNow).SetProperty(s => s.Error, error),
+                    ct);
         }
         catch (Exception e)
         {
-            context.IsSuccess = false;
-            context.Error = e;
+            _logger.LogError(e, "Failed to complete downloading: {Id}", downloadingId);
         }
-
-        return context;
     }
 
     #endregion
-
-    
 }

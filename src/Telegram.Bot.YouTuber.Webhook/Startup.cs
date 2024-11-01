@@ -15,7 +15,7 @@ using Telegram.Bot.YouTuber.Webhook.Services;
 using Telegram.Bot.YouTuber.Webhook.Services.Downloading;
 using Telegram.Bot.YouTuber.Webhook.Services.Files;
 using Telegram.Bot.YouTuber.Webhook.Services.Hosted;
-using Telegram.Bot.YouTuber.Webhook.Services.Messaging;
+using Telegram.Bot.YouTuber.Webhook.Services.Processing;
 using Telegram.Bot.YouTuber.Webhook.Services.Questions;
 using Telegram.Bot.YouTuber.Webhook.Services.Sessions;
 
@@ -95,21 +95,18 @@ public static class Startup
             .AddScoped<ITelegramService, TelegramService>()
             .AddScoped<ISessionService, SessionService>()
             .AddScoped<IDelegatingClientFactory, DelegatingClientFactory>()
-            .AddScoped<IQuestionService, QuestionService>()
             .AddScoped<IDownloadingClient, DownloadingClient>()
             .AddScoped<IDownloadingService, DownloadingService>()
-            .AddScoped<IMessageService, MessageService>()
-            .AddScoped<IStickService, StickService>();
+            .AddScoped<IStickService, StickService>()
+            .AddScoped<IMessageHandling, MessageHandling>();
 
         builder.Services
             .AddSingleton<IFileService, FileService>()
             .AddSingleton<IKeyboardService, KeyboardService>()
-            .AddSingleton<IDownloadQueueService, DownloadQueueService>()
-            .AddSingleton<IQuestionQueueService, QuestionQueueService>();
+            .AddSingleton<IDownloadQueueService, DownloadQueueService>();
 
         builder.Services.AddHostedService<DownloadHostedService>();
         builder.Services.AddHostedService<CleanHostedService>();
-        builder.Services.AddHostedService<QuestionHostedService>();
 
         return builder;
     }

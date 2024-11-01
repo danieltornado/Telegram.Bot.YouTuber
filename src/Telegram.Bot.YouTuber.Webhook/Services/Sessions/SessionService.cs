@@ -1,9 +1,9 @@
 ﻿using AutoMapper;
 using Microsoft.EntityFrameworkCore;
-using Telegram.Bot.Types;
 using Telegram.Bot.YouTuber.Webhook.DataAccess;
 using Telegram.Bot.YouTuber.Webhook.DataAccess.Entities;
-using Telegram.Bot.YouTuber.Webhook.Extensions;
+using Telegram.Bot.YouTuber.Webhook.DataAccess.Exceptions;
+using Telegram.Bot.YouTuber.Webhook.Services.Downloading;
 
 namespace Telegram.Bot.YouTuber.Webhook.Services.Sessions;
 
@@ -11,167 +11,148 @@ internal sealed class SessionService : ISessionService
 {
     private readonly AppDbContext _dbContext;
     private readonly IMapper _mapper;
+    private readonly ILogger<SessionService> _logger;
 
-    public SessionService(AppDbContext dbContext, IMapper mapper)
+    public SessionService(AppDbContext dbContext, IMapper mapper, ILogger<SessionService> logger)
     {
         _dbContext = dbContext;
         _mapper = mapper;
+        _logger = logger;
     }
 
     #region Implementation of ISessionService
 
-    public async Task<SessionContext> StartSessionAsync(Update update, CancellationToken ct)
+    public async Task<SessionContext> StartSessionAsync(StartSessionContext context, CancellationToken ct)
     {
-        SessionContext context = new();
-        context.IsSuccess = true;
+        var entity = _mapper.Map<SessionEntity>(context);
+        entity.CreatedAt = DateTime.UtcNow;
 
+        await _dbContext.Sessions.AddAsync(entity, ct);
+        await _dbContext.SaveChangesAsync(ct);
+
+        return _mapper.Map<SessionContext>(entity);
+    }
+
+    public async Task<List<SessionMediaContext>> SaveMediaAsync(Guid sessionId, IReadOnlyCollection<VideoInfo> video, IReadOnlyCollection<AudioInfo> audio, CancellationToken ct)
+    {
+        foreach (var videoInfo in video)
+        {
+            var mediaEntity = _mapper.Map<MediaEntity>(videoInfo);
+            mediaEntity.SessionId = sessionId;
+            await _dbContext.Media.AddAsync(mediaEntity, ct);
+        }
+
+        // SKIP video
+        await _dbContext.Media.AddAsync(new MediaEntity
+            {
+                SessionId = sessionId,
+                Type = MediaType.Video,
+                IsSkipped = true
+            },
+            ct);
+
+        foreach (var audioInfo in audio)
+        {
+            var mediaEntity = _mapper.Map<MediaEntity>(audioInfo);
+            mediaEntity.SessionId = sessionId;
+            await _dbContext.Media.AddAsync(mediaEntity, ct);
+        }
+
+        // SKIP audio
+        await _dbContext.Media.AddAsync(new MediaEntity
+            {
+                SessionId = sessionId,
+                Type = MediaType.Audio,
+                IsSkipped = true
+            },
+            ct);
+
+        await _dbContext.SaveChangesAsync(ct);
+
+        List<SessionMediaContext> mediaList = new(_dbContext.Media.Local.Count);
+        foreach (var mediaEntity in _dbContext.Media.Local)
+        {
+            var sessionMediaContext = _mapper.Map<SessionMediaContext>(mediaEntity);
+            mediaList.Add(sessionMediaContext);
+        }
+
+        return mediaList;
+    }
+
+    public async Task CompleteSessionAsync(Guid sessionId, CancellationToken ct)
+    {
         try
         {
-            context.MessageId = update.Message?.MessageId;
-            context.ChatId = update.Message?.Chat.Id;
-            context.Json = update.CreateJson();
-            context.Url = update.Message?.Text;
-
-            SessionEntity entity = new()
-            {
-                Json = context.Json,
-                CreatedAt = DateTime.UtcNow,
-                MessageId = context.MessageId,
-                ChatId = context.ChatId,
-                Url = context.Url
-            };
-
-            await _dbContext.Sessions.AddAsync(entity, ct);
-            await _dbContext.SaveChangesAsync(ct);
-
-            context.Id = entity.Id;
+            await _dbContext.Sessions
+                .Where(e => e.Id == sessionId)
+                .ExecuteUpdateAsync(e =>
+                        e.SetProperty(s => s.UpdatedAt, DateTime.UtcNow).SetProperty(s => s.IsCompleted, true),
+                    ct);
         }
         catch (Exception e)
         {
-            context.IsSuccess = false;
-            context.Error = e;
+            _logger.LogError(e, "Failed to complete session: {Id}", sessionId);
         }
-
-        return context;
     }
 
-    public async Task<SessionContext> ReadSessionAsync(Guid id, Update update, CancellationToken ct)
+    public async Task SetFailedSessionAsync(Guid sessionId, string error, CancellationToken ct)
     {
-        SessionContext context = new();
-        context.IsSuccess = true;
-        context.Id = id;
-
         try
         {
-            var entity = await _dbContext.Sessions.Include(e => e.Media).FirstOrDefaultAsync(e => e.Id == id, ct);
-            if (entity != null)
-            {
-                _mapper.Map(entity, context);
-
-                FillMediaToContext(context.Videos, entity, MediaType.Video);
-                FillMediaToContext(context.Audios, entity, MediaType.Audio);
-            }
-            else
-            {
-                context.IsSuccess = false;
-                context.Error = new Exception("Not found");
-            }
+            await _dbContext.Sessions
+                .Where(e => e.Id == sessionId)
+                .ExecuteUpdateAsync(e =>
+                        e.SetProperty(s => s.UpdatedAt, DateTime.UtcNow).SetProperty(s => s.Error, error),
+                    ct);
         }
         catch (Exception e)
         {
-            context.IsSuccess = false;
-            context.Error = e;
+            _logger.LogError(e, "Failed to complete session: {Id}", sessionId);
+        }
+    }
+
+    public async Task<SessionContext> GetSessionByMediaAsync(Guid mediaId, CancellationToken ct)
+    {
+        var entity = await _dbContext.Sessions.AsNoTracking().Where(e => e.Media!.Any(s => s.Id == mediaId)).FirstOrDefaultAsync(ct);
+        if (entity is null)
+            throw new EntityNotFoundException("Session not found");
+
+        return _mapper.Map<SessionContext>(entity);
+    }
+
+    public async Task<List<SessionMediaContext>> GetMediaBySessionAsync(Guid sessionId, MediaType mediaType, CancellationToken ct)
+    {
+        var entities = await _dbContext.Media.AsNoTracking().Where(e => e.SessionId == sessionId && e.Type == mediaType).ToListAsync(ct);
+        return _mapper.Map<List<SessionMediaContext>>(entities);
+    }
+
+    public async Task SaveSessionAnswerAsync(Guid mediaId, string? json, CancellationToken ct)
+    {
+        var mediaEntity = await _dbContext.Media.Include(e => e.Session).FirstOrDefaultAsync(e => e.Id == mediaId, ct);
+        if (mediaEntity is null)
+            throw new EntityNotFoundException("File not found");
+
+        if (mediaEntity.Type == MediaType.Video)
+        {
+            mediaEntity.Session!.VideoId = mediaId;
+            mediaEntity.Session!.JsonVideo = json;
+            mediaEntity.Session!.UpdatedAt = DateTime.UtcNow;
+        }
+        else if (mediaEntity.Type == MediaType.Audio)
+        {
+            mediaEntity.Session!.AudioId = mediaId;
+            mediaEntity.Session!.JsonAudio = json;
+            mediaEntity.Session!.UpdatedAt = DateTime.UtcNow;
         }
 
-        return context;
+        await _dbContext.SaveChangesAsync(ct);
     }
 
-    public Task SaveSessionAsync(SessionContext sessionContext, CancellationToken ct)
+    public async Task<List<SessionMediaContext>> GetMediaAsync(IEnumerable<Guid> mediaIds, CancellationToken ct)
     {
-        return SaveSessionContextAsync(sessionContext, false, ct);
-    }
-
-    public Task CompleteSessionAsync(SessionContext sessionContext, CancellationToken ct)
-    {
-        return SaveSessionContextAsync(sessionContext, true, ct);
+        var entities = await _dbContext.Media.AsNoTracking().Where(e => mediaIds.Contains(e.Id)).ToListAsync(ct);
+        return _mapper.Map<List<SessionMediaContext>>(entities);
     }
 
     #endregion
-
-    private async Task SaveSessionContextAsync(SessionContext sessionContext, bool isCompleted, CancellationToken ct)
-    {
-        try
-        {
-            var entity = await _dbContext.Sessions.Include(e => e.Media).FirstOrDefaultAsync(e => e.Id == sessionContext.Id, ct);
-
-            if (entity is not null)
-            {
-                _mapper.Map(sessionContext, entity);
-
-                if (isCompleted)
-                    entity.IsCompleted = true;
-
-                entity.UpdatedAt = DateTime.UtcNow;
-                entity.Error = sessionContext.Error?.ToString();
-
-                await AddNewMediaToEntity(sessionContext.Videos, MediaType.Video, entity);
-                await AddNewMediaToEntity(sessionContext.Audios, MediaType.Audio, entity);
-
-                _dbContext.Update(entity);
-                await _dbContext.SaveChangesAsync(ct);
-
-                sessionContext.Videos.Clear();
-                sessionContext.Audios.Clear();
-
-                // MediaEntity has already got an Id
-                FillMediaToContext(sessionContext.Videos, entity, MediaType.Video);
-                FillMediaToContext(sessionContext.Audios, entity, MediaType.Audio);
-            }
-            else
-            {
-                sessionContext.IsSuccess = false;
-                sessionContext.Error = new Exception("Not found");
-            }
-        }
-        catch (Exception e)
-        {
-            sessionContext.IsSuccess = false;
-            sessionContext.Error = e;
-        }
-    }
-
-    private async Task AddNewMediaToEntity(IReadOnlyList<SessionMediaContext> source, MediaType type, SessionEntity sessionEntity)
-    {
-        if (sessionEntity.Media is null)
-        {
-            sessionEntity.Media = new List<MediaEntity>();
-        }
-
-        foreach (var mediaContext in source)
-        {
-            if (mediaContext.Id == Guid.Empty)
-            {
-                var newMedia = _mapper.Map<MediaEntity>(mediaContext);
-                newMedia.Type = type;
-
-                sessionEntity.Media.Add(newMedia);
-                await _dbContext.Media.AddAsync(newMedia);
-            }
-        }
-    }
-
-    private void FillMediaToContext(ICollection<SessionMediaContext> target, SessionEntity sessionEntity, MediaType type)
-    {
-        if (sessionEntity.Media != null)
-        {
-            foreach (var mediaEntity in sessionEntity.Media)
-            {
-                if (mediaEntity.Type == type)
-                {
-                    var sessionMediaContext = _mapper.Map<SessionMediaContext>(mediaEntity);
-                    target.Add(sessionMediaContext);
-                }
-            }
-        }
-    }
 }

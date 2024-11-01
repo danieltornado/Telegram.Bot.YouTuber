@@ -61,49 +61,33 @@ public sealed class YouTubeClient : YouTube
             }
         }
     }
-
-    public async Task<IReadOnlyList<VideoInfo>> GetVideosAsync(string url, CancellationToken ct)
+    
+    public async Task<(IReadOnlyList<VideoInfo> Video, IReadOnlyList<AudioInfo> Audio)> GetMetadataAsync(string url, CancellationToken ct)
     {
         var allVideos = await GetAllVideosAsync(url).AsReadOnlyListAsync();
         if (allVideos.Count > 0)
         {
-            var result = new List<VideoInfo>(allVideos.Count);
+            var resultVideo = new List<VideoInfo>(allVideos.Count);
+            var resultAudio = new List<AudioInfo>(allVideos.Count);
 
             foreach (var youTubeVideo in allVideos)
             {
                 if (youTubeVideo.AdaptiveKind == AdaptiveKind.Video)
                 {
                     var videoInfo = await ToVideoInfo(youTubeVideo);
-                    result.Add(videoInfo);
+                    resultVideo.Add(videoInfo);
                 }
-            }
-
-            return result;
-        }
-
-        return Array.Empty<VideoInfo>();
-    }
-
-    public async Task<IReadOnlyList<AudioInfo>> GetAudiosAsync(string url, CancellationToken ct)
-    {
-        var allVideos = await GetAllVideosAsync(url).AsReadOnlyListAsync();
-        if (allVideos.Count > 0)
-        {
-            var result = new List<AudioInfo>(allVideos.Count);
-
-            foreach (var youTubeVideo in allVideos)
-            {
-                if (youTubeVideo.AdaptiveKind == AdaptiveKind.Audio)
+                else if (youTubeVideo.AdaptiveKind == AdaptiveKind.Audio)
                 {
                     var audioInfo = await ToAudioInfo(youTubeVideo);
-                    result.Add(audioInfo);
+                    resultAudio.Add(audioInfo);
                 }
             }
 
-            return result;
+            return (Video: resultVideo, Audio: resultAudio);
         }
 
-        return Array.Empty<AudioInfo>();
+        return (Video: Array.Empty<VideoInfo>(), Audio: Array.Empty<AudioInfo>());
     }
 
     private HttpClient MakeClient()

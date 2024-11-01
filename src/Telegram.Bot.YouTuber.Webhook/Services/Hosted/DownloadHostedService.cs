@@ -1,4 +1,5 @@
-﻿using Telegram.Bot.YouTuber.Webhook.Extensions;
+﻿using Telegram.Bot.YouTuber.Webhook.DataAccess.Exceptions;
+using Telegram.Bot.YouTuber.Webhook.Extensions;
 using Telegram.Bot.YouTuber.Webhook.Services.Downloading;
 using Telegram.Bot.YouTuber.Webhook.Services.Sessions;
 
@@ -16,7 +17,7 @@ public sealed class DownloadHostedService : BackgroundService
         _downloadQueueService = downloadQueueService;
         _logger = logger;
     }
-    
+
     #region Overrides of BackgroundService
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -38,7 +39,7 @@ public sealed class DownloadHostedService : BackgroundService
                 _logger.LogError(e, "Download service failed");
 
                 if (!stoppingToken.IsCancellationRequested)
-                    await Task.Delay(TimeSpan.FromMinutes(5), stoppingToken);
+                    await Task.Delay(TimeSpan.FromMinutes(1), stoppingToken);
             }
         }
     }
@@ -50,47 +51,58 @@ public sealed class DownloadHostedService : BackgroundService
         var context = await _downloadQueueService.DequeueAsync(ct);
 
         _logger.LogInformation("Started download task");
-        
+
         using var scope = _serviceProvider.CreateScope();
-        
+
+        var sessionService = scope.ServiceProvider.GetRequiredService<ISessionService>();
         var telegramService = scope.ServiceProvider.GetRequiredService<ITelegramService>();
-        
         var downloadingClient = scope.ServiceProvider.GetRequiredService<IDownloadingClient>();
-        
-        var downloadingContext = await downloadingClient.DownloadAsync(context, ct);
-        context.ApplyExternalContext(downloadingContext);
-        
-        if (context.IsSuccess)
+
+        try
         {
-            if (downloadingContext.IsSkipped)
+            var list = await sessionService.GetMediaAsync([context.VideoId.GetValueOrDefault(), context.AudioId.GetValueOrDefault()], ct);
+
+            var video = list.FirstOrDefault(e => e.Id == context.VideoId);
+            if (video is null)
+                throw new EntityNotFoundException("Media not found");
+
+            var audio = list.FirstOrDefault(e => e.Id == context.AudioId);
+            if (audio is null)
+                throw new EntityNotFoundException("Media not found");
+
+            if (video.IsSkipped && audio.IsSkipped)
             {
                 await telegramService.SendMessageAsync(context.ChatId, context.MessageId, "Nothing to download", ct);
             }
             else
             {
+                await telegramService.SendMessageAsync(context.ChatId, context.MessageId, "Processing...", ct);
+
+                var fileId = await downloadingClient.DownloadAsync(context.Id, video, audio, ct);
+
                 var linkGenerator = scope.ServiceProvider.GetRequiredService<LinkGenerator>();
-                var link = linkGenerator.GenerateFileLink(context);
+                var link = linkGenerator.GenerateFileLink(fileId, context.RequestContext);
                 if (link is null)
                 {
-                    context.IsSuccess = false;
-                    context.Error = new Exception("Failed to generate link");
-
-                    await telegramService.SendInternalServerErrorAsync(context.ChatId, context.MessageId, context.Error, ct);
+                    await telegramService.SendMessageAsync(context.ChatId, context.MessageId, "An error occured during generating link", ct);
                 }
                 else
                 {
                     await telegramService.SendMessageAsync(context.ChatId, context.MessageId, link, ct);
-                }    
+                }
             }
         }
-        else
+        catch (Exception e)
         {
-            await telegramService.SendMessageAsync(context.ChatId, context.MessageId, "An error occured during downloading", ct);
+            _logger.LogError(e, "Download service failed");
+
+            await sessionService.SetFailedSessionAsync(context.Id, e.ToString(), ct);
+
+            await telegramService.SendMessageAsync(context.ChatId, context.MessageId, "An error occured during processing", ct);
         }
-        
-        var sessionService = scope.ServiceProvider.GetRequiredService<ISessionService>();
-        await sessionService.CompleteSessionAsync(context, ct);
-        
+
+        await sessionService.CompleteSessionAsync(context.Id, ct);
+
         _logger.LogInformation("Finished download task");
     }
 }

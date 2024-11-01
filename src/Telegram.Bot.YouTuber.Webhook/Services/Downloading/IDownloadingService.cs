@@ -4,7 +4,8 @@ namespace Telegram.Bot.YouTuber.Webhook.Services.Downloading;
 
 public interface IDownloadingService
 {
-    Task<Guid> StartDownloadingAsync(SessionContext sessionContext, SessionMediaContext video, SessionMediaContext audio, CancellationToken ct);
-    Task CompleteDownloadingAsync(DownloadingContext context, CancellationToken ct);
-    Task<DownloadingContext> GetDownloadingAsync(Guid downloadingId, CancellationToken ct);
+    Task<Guid> StartDownloadingAsync(Guid sessionId, SessionMediaContext video, SessionMediaContext audio, CancellationToken ct);
+    Task CompleteDownloadingAsync(Guid downloadingId, CancellationToken ct);
+    Task<DownloadingContext?> GetDownloadingAsync(Guid downloadingId, CancellationToken ct);
+    Task SetFailedDownloadingAsync(Guid downloadingId, string error, CancellationToken ct);
 }

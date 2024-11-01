@@ -12,7 +12,11 @@ internal sealed class DownloadingClient : IDownloadingClient
     private readonly IStickService _stickService;
     private readonly IDownloadingService _downloadingService;
 
-    public DownloadingClient(YouTubeClient youTubeClient, IFileService fileService, IStickService stickService, IDownloadingService downloadingService)
+    public DownloadingClient(
+        YouTubeClient youTubeClient,
+        IFileService fileService,
+        IStickService stickService,
+        IDownloadingService downloadingService)
     {
         _youTubeClient = youTubeClient;
         _fileService = fileService;
@@ -22,35 +26,15 @@ internal sealed class DownloadingClient : IDownloadingClient
 
     #region Implementation of IDownloadService
 
-    public async Task<DownloadingContext> DownloadAsync(SessionContext sessionContext, CancellationToken ct)
+    public async Task<Guid> DownloadAsync(Guid sessionId, SessionMediaContext video, SessionMediaContext audio, CancellationToken ct)
     {
-        DownloadingContext downloadingContext = new();
-        downloadingContext.IsSuccess = true;
-
-        var video = sessionContext.Videos.FirstOrDefault(e => e.Id == sessionContext.VideoId);
-        if (video is null)
-        {
-            downloadingContext.IsSuccess = false;
-            downloadingContext.Error = new Exception($"Wrong video: {sessionContext.VideoId}");
-            return downloadingContext;
-        }
-
-        var audio = sessionContext.Audios.FirstOrDefault(e => e.Id == sessionContext.AudioId);
-        if (audio is null)
-        {
-            downloadingContext.IsSuccess = false;
-            downloadingContext.Error = new Exception($"Wrong audio: {sessionContext.AudioId}");
-            return downloadingContext;
-        }
+        var downloadingId = await _downloadingService.StartDownloadingAsync(sessionId, video, audio, ct);
 
         try
         {
-            var downloadingId = await _downloadingService.StartDownloadingAsync(sessionContext, video, audio, ct);
-            downloadingContext.Id = downloadingId;
-
             if (video.IsSkipped && audio.IsSkipped)
             {
-                downloadingContext.IsSkipped = true;
+                // nothing to download
             }
             else if (video.IsSkipped)
             {
@@ -107,12 +91,13 @@ internal sealed class DownloadingClient : IDownloadingClient
         }
         catch (Exception e)
         {
-            downloadingContext.IsSuccess = false;
-            downloadingContext.Error = e;
+            await _downloadingService.SetFailedDownloadingAsync(downloadingId, e.ToString(), ct);
+            throw;
         }
 
-        await _downloadingService.CompleteDownloadingAsync(downloadingContext, ct);
-        return downloadingContext;
+        await _downloadingService.CompleteDownloadingAsync(downloadingId, ct);
+
+        return downloadingId;
     }
 
     #endregion

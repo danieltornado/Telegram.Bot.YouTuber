@@ -4,34 +4,29 @@ namespace Telegram.Bot.YouTuber.Webhook.Services.Questions;
 
 public sealed class QuestionData
 {
-    public Guid SessionId { get; init; }
     public MediaType Type { get; init; }
-    public int Num { get; init; }
+    public Guid MediaId { get; init; }
 
     public string ToCallbackQueryData()
     {
-        return $"{SessionId:D}:{Type}:{Num}";
+        return $"{Type}:{MediaId}";
     }
 
     public static QuestionData FromCallbackQueryData(string data)
     {
         var items = data.Split(':');
-        if (items.Length != 3)
+        if (items.Length != 2)
             throw new InvalidOperationException("Invalid data");
 
-        if (Guid.TryParse(items[0], out Guid sessionId))
+        if (Enum.TryParse(items[0], out MediaType mediaType))
         {
-            if (Enum.TryParse(items[1], out MediaType mediaType))
+            if (Guid.TryParse(items[1], out Guid mediaId))
             {
-                if (int.TryParse(items[2], out int typeNum))
+                return new QuestionData
                 {
-                    return new QuestionData
-                    {
-                        SessionId = sessionId,
-                        Num = typeNum,
-                        Type = mediaType
-                    };
-                }
+                    Type = mediaType,
+                    MediaId = mediaId
+                };
             }
         }
 

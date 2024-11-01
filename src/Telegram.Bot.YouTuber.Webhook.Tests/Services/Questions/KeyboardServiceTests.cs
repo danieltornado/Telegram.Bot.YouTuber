@@ -19,9 +19,7 @@ public sealed class KeyboardServiceTests
     public void WhenSomeButtons_GetQuestionKeyboard_ShouldCreateSomeLine(int countOfButtons, int countOfLines)
     {
         // Arrange
-        QuestionContext context = new();
-        
-        List<QuestionButton> buttons = new();        
+        List<QuestionButton> buttons = new();
         for (int i = 0; i < countOfButtons; i++)
         {
             buttons.Add(new QuestionButton
@@ -30,12 +28,10 @@ public sealed class KeyboardServiceTests
                 Data = i.ToString()
             });
         }
-        
-        context.Buttons = buttons;
-        
+
         // Act
         var service = new KeyboardService();
-        var keyboard = service.GetQuestionKeyboard(context);
+        var keyboard = service.GetQuestionKeyboard(buttons);
 
         // Assert
         keyboard.InlineKeyboard.Should().HaveCount(countOfLines);

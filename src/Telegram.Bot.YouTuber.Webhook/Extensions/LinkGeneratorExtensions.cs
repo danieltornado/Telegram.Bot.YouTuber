@@ -1,15 +1,14 @@
-﻿using Telegram.Bot.YouTuber.Webhook.Services.Downloading;
-using Telegram.Bot.YouTuber.Webhook.Services.Sessions;
+﻿using Telegram.Bot.YouTuber.Webhook.Services;
 
 namespace Telegram.Bot.YouTuber.Webhook.Extensions;
 
 public static class LinkGeneratorExtensions
 {
-    public static string? GenerateFileLink(this LinkGenerator linkGenerator, SessionContext context)
+    public static string? GenerateFileLink(this LinkGenerator linkGenerator, Guid fileId, RequestContext? requestContext)
     {
-        if (string.IsNullOrEmpty(context.Scheme))
-            return linkGenerator.GetPathByAction("GetFile", "File", new { fileId = context.Id }); 
-        
-        return linkGenerator.GetUriByAction("GetFile", "File", new { fileId = context.FileId }, scheme: context.Scheme, host: context.Host, pathBase: context.PathBase);
+        if (requestContext is null)
+            return linkGenerator.GetPathByAction("GetFile", "File", new { fileId });
+
+        return linkGenerator.GetUriByAction("GetFile", "File", new { fileId }, scheme: requestContext.Scheme, host: requestContext.Host, pathBase: requestContext.PathBase);
     }
 }

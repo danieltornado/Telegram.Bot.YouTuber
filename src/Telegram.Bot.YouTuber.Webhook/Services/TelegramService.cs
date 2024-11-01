@@ -1,5 +1,6 @@
 ﻿using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types.ReplyMarkups;
+using Telegram.Bot.YouTuber.Webhook.DataAccess.Exceptions;
 
 namespace Telegram.Bot.YouTuber.Webhook.Services;
 
@@ -15,6 +16,24 @@ internal sealed class TelegramService : ITelegramService
     }
     
     #region Implementation of ITelegramService
+
+    public async Task SendWelcomeMessageAsync(long? chatId, CancellationToken ct)
+    {
+        if (!chatId.HasValue)
+        {
+            _logger.LogWarning("No chatId specified");
+            return;
+        }
+
+        try
+        {
+            await _botClient.SendTextMessageAsync(chatId: chatId, text: "Welcome", parseMode: ParseMode.Html, cancellationToken: ct);
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, "An error occured while sending text message");
+        }
+    }
 
     public async Task SendMessageAsync(long? chatId, int? replyToMessageId, string text, CancellationToken ct)
     {
@@ -63,6 +82,7 @@ internal sealed class TelegramService : ITelegramService
         string text = exception switch
         {
             VideoLibrary.Exceptions.UnavailableStreamException => "Video is not accessible",
+            EntityNotFoundException e => e.Message,
             _ => "Internal server error"
         };
 

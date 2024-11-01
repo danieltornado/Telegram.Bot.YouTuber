@@ -1,9 +1,11 @@
-﻿namespace Telegram.Bot.YouTuber.Webhook.Services.Sessions;
+﻿using Telegram.Bot.YouTuber.Webhook.DataAccess.Entities;
+
+namespace Telegram.Bot.YouTuber.Webhook.Services.Sessions;
 
 public sealed class SessionMediaContext
 {
     public Guid Id { get; set; }
-    public int Num { get; set; }
+    public MediaType Type { get; set; }
     public string? Title { get; set; }
     public string? InternalUrl { get; set; }
     public string? Quality { get; set; }

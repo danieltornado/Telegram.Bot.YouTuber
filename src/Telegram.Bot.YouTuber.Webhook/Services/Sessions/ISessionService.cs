@@ -1,11 +1,16 @@
-﻿using Telegram.Bot.Types;
+﻿using Telegram.Bot.YouTuber.Webhook.DataAccess.Entities;
+using Telegram.Bot.YouTuber.Webhook.Services.Downloading;
 
 namespace Telegram.Bot.YouTuber.Webhook.Services.Sessions;
 
 public interface ISessionService
 {
-    Task<SessionContext> StartSessionAsync(Update update, CancellationToken ct);
-    Task<SessionContext> ReadSessionAsync(Guid id, Update update, CancellationToken ct);
-    Task SaveSessionAsync(SessionContext sessionContext, CancellationToken ct);
-    Task CompleteSessionAsync(SessionContext sessionContext, CancellationToken ct);
+    Task<SessionContext> StartSessionAsync(StartSessionContext context, CancellationToken ct);
+    Task<List<SessionMediaContext>> SaveMediaAsync(Guid sessionId, IReadOnlyCollection<VideoInfo> video, IReadOnlyCollection<AudioInfo> audio, CancellationToken ct);
+    Task CompleteSessionAsync(Guid sessionId, CancellationToken ct);
+    Task SetFailedSessionAsync(Guid sessionId, string error, CancellationToken ct);
+    Task<SessionContext> GetSessionByMediaAsync(Guid mediaId, CancellationToken ct);
+    Task<List<SessionMediaContext>> GetMediaBySessionAsync(Guid sessionId, MediaType mediaType, CancellationToken ct);
+    Task SaveSessionAnswerAsync(Guid mediaId, string? json, CancellationToken ct);
+    Task<List<SessionMediaContext>> GetMediaAsync(IEnumerable<Guid> mediaIds, CancellationToken ct);
 }

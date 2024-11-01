@@ -17,12 +17,6 @@ public sealed class MediaEntity
 
     #endregion
 
-    /// <summary>
-    /// Unique number for a media
-    /// </summary>
-    /// <remarks>Eliminates the need to use an identifier</remarks>
-    public int Num { get; set; }
-    
     [MaxLength(AppDbConstants.TITLE_LENGTH)]
     public string? Title { get; set; }
 

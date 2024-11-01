@@ -37,31 +37,6 @@ public static class BytesToHumanExtensions
         return FloatForm((double)size / eb) + "Eb";
     }
 
-    private static double ConvertBytesToKb(long bytes)
-    {
-        return bytes / 1024f;
-    }
-
-    private static double ConvertBytesToMb(long bytes)
-    {
-        return ConvertBytesToKb(bytes) / 1024f;
-    }
-
-    private static double ConvertBytesToGb(long bytes)
-    {
-        return ConvertBytesToMb(bytes) / 1024f;
-    }
-
-    private static double ConvertBytesToTb(long bytes)
-    {
-        return ConvertBytesToGb(bytes) / 1024f;
-    }
-
-    private static double ConvertBytesToPb(long bytes)
-    {
-        return ConvertBytesToTb(bytes) / 1024f;
-    }
-
     private static string FloatForm(double d)
     {
         return Math.Round(d, 2).ToString("#.00", System.Globalization.CultureInfo.InvariantCulture);

@@ -2,7 +2,6 @@
 using Telegram.Bot.YouTuber.Webhook.Extensions;
 using Telegram.Bot.YouTuber.Webhook.Services.Downloading;
 using Telegram.Bot.YouTuber.Webhook.Services.Files;
-using Telegram.Bot.YouTuber.Webhook.Services.Sessions;
 
 namespace Telegram.Bot.YouTuber.Webhook.Controllers;
 
@@ -25,10 +24,10 @@ public sealed class FileController : ControllerBase
     public async Task<IActionResult> GetFile(Guid fileId, CancellationToken ct)
     {
         var downloadingContext = await _downloadingService.GetDownloadingAsync(fileId, ct);
-        if (!downloadingContext.IsSuccess)
+        if (downloadingContext is null)
         {
-            _logger.LogError(downloadingContext.Error, "Failed to get a file: {Id}", fileId);
-            return BadRequest();
+            _logger.LogWarning("File not found: {Id}", fileId);
+            return NotFound();
         }
 
         string title = downloadingContext.GetTitleWithExtension();

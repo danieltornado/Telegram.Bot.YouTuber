@@ -4,5 +4,5 @@ namespace Telegram.Bot.YouTuber.Webhook.Services.Questions;
 
 public interface IKeyboardService
 {
-    InlineKeyboardMarkup GetQuestionKeyboard(QuestionContext context);
+    InlineKeyboardMarkup GetQuestionKeyboard(IReadOnlyList<QuestionButton> buttons);
 }

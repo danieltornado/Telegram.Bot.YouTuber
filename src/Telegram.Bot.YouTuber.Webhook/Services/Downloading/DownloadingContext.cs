@@ -1,6 +1,6 @@
 ﻿namespace Telegram.Bot.YouTuber.Webhook.Services.Downloading;
 
-public sealed class DownloadingContext : IContext
+public sealed class DownloadingContext
 {
     public Guid Id { get; set; }
     public string? VideoTitle { get; set; }
@@ -12,11 +12,4 @@ public sealed class DownloadingContext : IContext
     public string? AudioFormat { get; set; }
     public string? AudioExtension { get; set; }
     public bool IsSkipped { get; set; }
-
-    #region Implementation of IContext
-
-    public bool IsSuccess { get; set; }
-    public Exception? Error { get; set; }
-
-    #endregion
 }

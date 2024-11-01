@@ -1,5 +1,4 @@
 ﻿using Telegram.Bot.Types.ReplyMarkups;
-using Telegram.Bot.YouTuber.Core.Extensions;
 
 namespace Telegram.Bot.YouTuber.Webhook.Services.Questions;
 
@@ -7,11 +6,9 @@ internal sealed class KeyboardService : IKeyboardService
 {
     #region Implementation of IKeyboardService
 
-    public InlineKeyboardMarkup GetQuestionKeyboard(QuestionContext context)
+    public InlineKeyboardMarkup GetQuestionKeyboard(IReadOnlyList<QuestionButton> buttons)
     {
-        var buttons = context.Buttons.AsNotNull();
-
-        List<IEnumerable<InlineKeyboardButton>> list = new List<IEnumerable<InlineKeyboardButton>>();
+        List<IEnumerable<InlineKeyboardButton>> list = new(buttons.Count);
 
         int i = 0;
         while (i < buttons.Count)
@@ -24,7 +21,7 @@ internal sealed class KeyboardService : IKeyboardService
     }
 
     #endregion
-
+    
     private List<InlineKeyboardButton> Take2(ref int index, IReadOnlyList<QuestionButton> source)
     {
         List<InlineKeyboardButton> list = new(2);
