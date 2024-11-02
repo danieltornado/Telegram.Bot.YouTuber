@@ -34,6 +34,9 @@ public sealed class MessageController : ControllerBase
     {
         await using var scope = _serviceProvider.CreateAsyncScope();
         var handler = scope.ServiceProvider.GetRequiredService<IMessageHandling>();
-        await handler.HandleMessageAsync(update, requestContext, CancellationToken.None);
+        
+        using var tokenSource = new CancellationTokenSource();
+        tokenSource.CancelAfter(TimeSpan.FromHours(2));
+        await handler.HandleMessageAsync(update, requestContext, tokenSource.Token);
     }
 }

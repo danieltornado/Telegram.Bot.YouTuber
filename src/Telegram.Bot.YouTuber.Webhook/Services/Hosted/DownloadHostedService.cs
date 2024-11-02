@@ -30,16 +30,13 @@ public sealed class DownloadHostedService : BackgroundService
             {
                 await DoWorkAsync(stoppingToken);
             }
-            catch (TaskCanceledException)
+            catch (TaskCanceledException e)
             {
-                _logger.LogInformation("Download service cancelled");
+                _logger.LogError(e, "Download service cancelled");
             }
             catch (Exception e)
             {
                 _logger.LogError(e, "Download service failed");
-
-                if (!stoppingToken.IsCancellationRequested)
-                    await Task.Delay(TimeSpan.FromMinutes(1), stoppingToken);
             }
         }
     }
@@ -78,7 +75,10 @@ public sealed class DownloadHostedService : BackgroundService
             {
                 await telegramService.SendMessageAsync(context.ChatId, context.MessageId, "Processing...", ct);
 
-                var fileId = await downloadingClient.DownloadAsync(context.Id, video, audio, ct);
+                using var tokenSource = CancellationTokenSource.CreateLinkedTokenSource(ct);
+                tokenSource.CancelAfter(TimeSpan.FromHours(2));
+
+                var fileId = await downloadingClient.DownloadAsync(context.Id, video, audio, tokenSource.Token);
 
                 var linkGenerator = scope.ServiceProvider.GetRequiredService<LinkGenerator>();
                 var link = linkGenerator.GenerateFileLink(fileId, context.RequestContext);
