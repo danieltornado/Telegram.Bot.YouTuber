@@ -11,13 +11,19 @@ using NLog.Extensions.Logging;
 using Telegram.Bot.YouTuber.Core.Settings;
 using Telegram.Bot.YouTuber.Webhook.DataAccess;
 using Telegram.Bot.YouTuber.Webhook.Extensions;
-using Telegram.Bot.YouTuber.Webhook.Services;
-using Telegram.Bot.YouTuber.Webhook.Services.Downloading;
-using Telegram.Bot.YouTuber.Webhook.Services.Files;
 using Telegram.Bot.YouTuber.Webhook.Services.Hosted;
-using Telegram.Bot.YouTuber.Webhook.Services.Processing;
-using Telegram.Bot.YouTuber.Webhook.Services.Questions;
-using Telegram.Bot.YouTuber.Webhook.Services.Sessions;
+using Telegram.Bot.YouTuber.Webhook.BL.Abstractions;
+using Telegram.Bot.YouTuber.Webhook.BL.Abstractions.Downloading;
+using Telegram.Bot.YouTuber.Webhook.BL.Abstractions.Media;
+using Telegram.Bot.YouTuber.Webhook.BL.Abstractions.Questions;
+using Telegram.Bot.YouTuber.Webhook.BL.Abstractions.Queues;
+using Telegram.Bot.YouTuber.Webhook.BL.Abstractions.Sessions;
+using Telegram.Bot.YouTuber.Webhook.BL.Implementations;
+using Telegram.Bot.YouTuber.Webhook.BL.Implementations.Downloading;
+using Telegram.Bot.YouTuber.Webhook.BL.Implementations.Media;
+using Telegram.Bot.YouTuber.Webhook.BL.Implementations.Questions;
+using Telegram.Bot.YouTuber.Webhook.BL.Implementations.Queues;
+using Telegram.Bot.YouTuber.Webhook.BL.Implementations.Sessions;
 
 namespace Telegram.Bot.YouTuber.Webhook;
 
@@ -89,7 +95,8 @@ public static class Startup
             .AddAutoMapper(typeof(Startup));
 
         builder.Services
-            .AddTransient<YouTubeClient>();
+            .AddTransient<IYouTubeClient, YouTubeClient>()
+            .AddTransient<IWorkerInstance, WorkerInstance>();
 
         builder.Services
             .AddScoped<ITelegramService, TelegramService>()
@@ -103,10 +110,13 @@ public static class Startup
         builder.Services
             .AddSingleton<IFileService, FileService>()
             .AddSingleton<IKeyboardService, KeyboardService>()
-            .AddSingleton<IDownloadQueueService, DownloadQueueService>();
+            .AddSingleton<ISessionsQueueService, SessionsQueueService>()
+            .AddSingleton<IFreeWorkersService, FreeWorkersService>();
 
-        builder.Services.AddHostedService<DownloadHostedService>();
-        builder.Services.AddHostedService<CleanHostedService>();
+        builder.Services
+            .AddHostedService<DownloadHostedService>()
+            .AddHostedService<CleanHostedService>()
+            .AddHostedService<WorkersRegistrationHostedService>();
 
         return builder;
     }
@@ -131,7 +141,7 @@ public static class Startup
         app.UseRouting();
 
         // twin configuration
-        string? pathBase = app.Configuration["PathBase"];
+        string? pathBase = app.Configuration.GetAppPathBase();
         if (!string.IsNullOrWhiteSpace(pathBase))
             app.UsePathBase(pathBase);
 
@@ -142,9 +152,22 @@ public static class Startup
         return app;
     }
 
-    public static async Task MigrateDbAsync(this WebApplication app)
+    /// <summary>
+    /// Executes migrations
+    /// </summary>
+    /// <param name="app"></param>
+    public static Task MigrateDbAsync(this WebApplication app)
     {
-        await using var scope = app.Services.CreateAsyncScope();
+        return app.Services.MigrateDbAsync();
+    }
+
+    /// <summary>
+    /// Executes migrations
+    /// </summary>
+    /// <param name="serviceProvider"></param>
+    public static async Task MigrateDbAsync(this IServiceProvider serviceProvider)
+    {
+        await using var scope = serviceProvider.CreateAsyncScope();
         await using var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         await context.Database.MigrateAsync();
     }

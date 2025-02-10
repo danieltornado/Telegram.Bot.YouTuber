@@ -5,15 +5,23 @@ namespace Telegram.Bot.YouTuber.Webhook.Extensions;
 
 public static class ConfigurationExtensions
 {
+    /// <summary>
+    /// Gets decoded postgres connection string
+    /// </summary>
+    /// <param name="configuration"></param>
+    /// <param name="connectionStringName"></param>
+    /// <param name="applicationName"></param>
+    /// <returns></returns>
+    /// <exception cref="InvalidOperationException"></exception>
     public static string GetPgsqlConnectionString(this IConfiguration configuration, string connectionStringName, string applicationName)
     {
         var stringUri = configuration.GetConnectionString(connectionStringName);
         if (stringUri is null)
             throw new InvalidOperationException("Отсутствует строка подключения");
-        
+
         Uri factUri = new(stringUri);
         string[] userInfo = factUri.UserInfo.Split(':');
-        
+
         NpgsqlConnectionStringBuilder stringBuilder = new()
         {
             Host = factUri.Host,
@@ -24,7 +32,32 @@ public static class ConfigurationExtensions
             IncludeErrorDetail = true,
             ApplicationName = applicationName
         };
-        
+
         return stringBuilder.ToString();
+    }
+
+    /// <summary>
+    /// Gets a setting "PathBase"
+    /// </summary>
+    /// <param name="configuration"></param>
+    /// <returns></returns>
+    public static string? GetAppPathBase(this IConfiguration configuration)
+    {
+        return configuration["PathBase"];
+    }
+
+    /// <summary>
+    /// Gets a setting "WorkersCount"
+    /// </summary>
+    /// <param name="configuration"></param>
+    /// <returns></returns>
+    /// <exception cref="InvalidProgramException"></exception>
+    public static int GetWorkersCount(this IConfiguration configuration)
+    {
+        var count = configuration.GetValue<int>("WorkersCount");
+        if (count <= 0)
+            throw new InvalidProgramException("WorkersCount must be greater than 0");
+
+        return count;
     }
 }

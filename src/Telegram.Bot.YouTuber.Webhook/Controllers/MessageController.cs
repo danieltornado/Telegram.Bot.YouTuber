@@ -1,7 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Telegram.Bot.Types;
-using Telegram.Bot.YouTuber.Webhook.Services;
-using Telegram.Bot.YouTuber.Webhook.Services.Processing;
+using Telegram.Bot.YouTuber.Webhook.BL.Abstractions;
 
 namespace Telegram.Bot.YouTuber.Webhook.Controllers;
 
@@ -26,11 +25,11 @@ public sealed class MessageController : ControllerBase
             PathBase = Request.PathBase,
         };
 
-        StartHandling(update, requestContext);
+        _ = StartHandling(update, requestContext);
         return Ok();
     }
 
-    private async void StartHandling(Update update, RequestContext requestContext)
+    private async Task StartHandling(Update update, RequestContext requestContext)
     {
         await using var scope = _serviceProvider.CreateAsyncScope();
         var handler = scope.ServiceProvider.GetRequiredService<IMessageHandling>();

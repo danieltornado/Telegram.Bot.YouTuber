@@ -1,5 +1,5 @@
 ﻿using FluentAssertions;
-using Telegram.Bot.YouTuber.Webhook.Extensions;
+using Telegram.Bot.YouTuber.Webhook.BL;
 
 namespace Telegram.Bot.YouTuber.Webhook.Tests.Extensions;
 

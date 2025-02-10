@@ -1,20 +1,20 @@
-﻿using Telegram.Bot.YouTuber.Webhook.DataAccess.Exceptions;
-using Telegram.Bot.YouTuber.Webhook.Extensions;
-using Telegram.Bot.YouTuber.Webhook.Services.Downloading;
-using Telegram.Bot.YouTuber.Webhook.Services.Sessions;
+﻿using Telegram.Bot.YouTuber.Webhook.BL.Abstractions.Queues;
 
 namespace Telegram.Bot.YouTuber.Webhook.Services.Hosted;
 
 public sealed class DownloadHostedService : BackgroundService
 {
-    private readonly IServiceProvider _serviceProvider;
-    private readonly IDownloadQueueService _downloadQueueService;
+    private readonly IFreeWorkersService _freeWorkerService;
+    private readonly ISessionsQueueService _sessionsQueueService;
     private readonly ILogger<DownloadHostedService> _logger;
 
-    public DownloadHostedService(IServiceProvider serviceProvider, IDownloadQueueService downloadQueueService, ILogger<DownloadHostedService> logger)
+    public DownloadHostedService(
+        IFreeWorkersService freeWorkerService,
+        ISessionsQueueService sessionsQueueService,
+        ILogger<DownloadHostedService> logger)
     {
-        _serviceProvider = serviceProvider;
-        _downloadQueueService = downloadQueueService;
+        _freeWorkerService = freeWorkerService;
+        _sessionsQueueService = sessionsQueueService;
         _logger = logger;
     }
 
@@ -32,11 +32,18 @@ public sealed class DownloadHostedService : BackgroundService
             }
             catch (TaskCanceledException e)
             {
-                _logger.LogError(e, "Download service cancelled");
+                _logger.LogError(e, "Download service task-cancelled");
+                break;
+            }
+            catch (OperationCanceledException e)
+            {
+                _logger.LogError(e, "Download service operation-cancelled");
+                break;
             }
             catch (Exception e)
             {
                 _logger.LogError(e, "Download service failed");
+                break;
             }
         }
     }
@@ -45,64 +52,16 @@ public sealed class DownloadHostedService : BackgroundService
 
     private async Task DoWorkAsync(CancellationToken ct)
     {
-        var context = await _downloadQueueService.DequeueAsync(ct);
+        // Waiting a free worker
+        var worker = await _freeWorkerService.DequeueAsync(ct);
 
-        _logger.LogInformation("Started download task");
+        _logger.LogInformation("Worker has been dequeued: {WorkerId}", worker.WorkerId);
 
-        using var scope = _serviceProvider.CreateScope();
+        // Waiting a next session
+        var context = await _sessionsQueueService.DequeueAsync(ct);
 
-        var sessionService = scope.ServiceProvider.GetRequiredService<ISessionService>();
-        var telegramService = scope.ServiceProvider.GetRequiredService<ITelegramService>();
-        var downloadingClient = scope.ServiceProvider.GetRequiredService<IDownloadingClient>();
+        _logger.LogInformation("Session has been dequeued");
 
-        try
-        {
-            var list = await sessionService.GetMediaAsync([context.VideoId.GetValueOrDefault(), context.AudioId.GetValueOrDefault()], ct);
-
-            var video = list.FirstOrDefault(e => e.Id == context.VideoId);
-            if (video is null)
-                throw new EntityNotFoundException("Media not found");
-
-            var audio = list.FirstOrDefault(e => e.Id == context.AudioId);
-            if (audio is null)
-                throw new EntityNotFoundException("Media not found");
-
-            if (video.IsSkipped && audio.IsSkipped)
-            {
-                await telegramService.SendMessageAsync(context.ChatId, context.MessageId, "Nothing to download", ct);
-            }
-            else
-            {
-                await telegramService.SendMessageAsync(context.ChatId, context.MessageId, "Processing...", ct);
-
-                using var tokenSource = CancellationTokenSource.CreateLinkedTokenSource(ct);
-                tokenSource.CancelAfter(TimeSpan.FromHours(2));
-
-                var fileId = await downloadingClient.DownloadAsync(context.Id, video, audio, tokenSource.Token);
-
-                var linkGenerator = scope.ServiceProvider.GetRequiredService<LinkGenerator>();
-                var link = linkGenerator.GenerateFileLink(fileId, context.RequestContext);
-                if (link is null)
-                {
-                    await telegramService.SendMessageAsync(context.ChatId, context.MessageId, "An error occured during generating link", ct);
-                }
-                else
-                {
-                    await telegramService.SendMessageAsync(context.ChatId, context.MessageId, link, ct);
-                }
-            }
-        }
-        catch (Exception e)
-        {
-            _logger.LogError(e, "Download service failed");
-
-            await sessionService.SetFailedSessionAsync(context.Id, e.ToString(), ct);
-
-            await telegramService.SendMessageAsync(context.ChatId, context.MessageId, "An error occured during processing", ct);
-        }
-
-        await sessionService.CompleteSessionAsync(context.Id, ct);
-
-        _logger.LogInformation("Finished download task");
+        _ = worker.ProcessAsync(context, ct);
     }
 }

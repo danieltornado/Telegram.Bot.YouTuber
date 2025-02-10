@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using Telegram.Bot.YouTuber.Webhook.Extensions;
-using Telegram.Bot.YouTuber.Webhook.Services.Downloading;
-using Telegram.Bot.YouTuber.Webhook.Services.Files;
+using Telegram.Bot.YouTuber.Webhook.BL.Abstractions;
+using Telegram.Bot.YouTuber.Webhook.BL.Abstractions.Sessions;
+using Telegram.Bot.YouTuber.Webhook.BL.Implementations.Sessions;
 
 namespace Telegram.Bot.YouTuber.Webhook.Controllers;
 
