@@ -72,8 +72,6 @@ public static class WebApplicationFactoryExtensions
     public static Task<HttpResponseMessage> PostAsync<TEntryPoint, TBody>(this WebApplicationFactory<TEntryPoint> app, string url, TBody body)
         where TEntryPoint : class
     {
-        var jsonOptions = app.Services.GetRequiredService<IOptions<JsonOptions>>();
-        //string bodyStr = JsonSerializer.Serialize(body, jsonOptions.Value.JsonSerializerOptions);
         string bodyStr = JsonSerializer.Serialize(body, JsonBotAPI.Options);
 
         HttpRequestMessage request = new(HttpMethod.Post, url);
