@@ -173,7 +173,6 @@ public sealed class DownloadSessionTests
                         Format = "aac",
                         Quality = "480p"
                     }
-
                 ],
 
                 // other fields do not matter

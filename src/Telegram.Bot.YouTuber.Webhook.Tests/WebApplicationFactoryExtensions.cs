@@ -2,6 +2,7 @@
 using System.Net.Http.Headers;
 using AutoMapper;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
@@ -10,8 +11,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Moq;
-using Newtonsoft.Json;
 using Telegram.Bot.Types;
 using Telegram.Bot.YouTuber.Webhook.BL.Abstractions;
 using Telegram.Bot.YouTuber.Webhook.BL.Abstractions.Downloading;
@@ -20,6 +21,7 @@ using Telegram.Bot.YouTuber.Webhook.BL.Abstractions.Queues;
 using Telegram.Bot.YouTuber.Webhook.BL.Abstractions.Sessions;
 using Telegram.Bot.YouTuber.Webhook.BL.Implementations;
 using Telegram.Bot.YouTuber.Webhook.BL.Implementations.Downloading;
+using JsonSerializer = System.Text.Json.JsonSerializer;
 
 namespace Telegram.Bot.YouTuber.Webhook.Tests;
 
@@ -70,12 +72,9 @@ public static class WebApplicationFactoryExtensions
     public static Task<HttpResponseMessage> PostAsync<TEntryPoint, TBody>(this WebApplicationFactory<TEntryPoint> app, string url, TBody body)
         where TEntryPoint : class
     {
-        string bodyStr = JsonConvert.SerializeObject(
-            body,
-            new JsonSerializerSettings
-            {
-                NullValueHandling = NullValueHandling.Ignore
-            });
+        var jsonOptions = app.Services.GetRequiredService<IOptions<JsonOptions>>();
+        //string bodyStr = JsonSerializer.Serialize(body, jsonOptions.Value.JsonSerializerOptions);
+        string bodyStr = JsonSerializer.Serialize(body, JsonBotAPI.Options);
 
         HttpRequestMessage request = new(HttpMethod.Post, url);
         request.Content = new StringContent(bodyStr, new MediaTypeHeaderValue("application/json"));

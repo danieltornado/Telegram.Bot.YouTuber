@@ -28,7 +28,7 @@ internal sealed class TelegramService : ITelegramService
 
         try
         {
-            await _botClient.SendTextMessageAsync(chatId: chatId, text: "Welcome", parseMode: ParseMode.Html, cancellationToken: ct);
+            await _botClient.SendMessage(chatId: chatId, text: "Welcome", parseMode: ParseMode.Html, cancellationToken: ct);
         }
         catch (Exception e)
         {
@@ -46,7 +46,7 @@ internal sealed class TelegramService : ITelegramService
 
         try
         {
-            await _botClient.SendTextMessageAsync(chatId: chatId, text: text, parseMode: ParseMode.Html, replyToMessageId: replyToMessageId, cancellationToken: ct);
+            await _botClient.SendMessage(chatId: chatId, text: text, parseMode: ParseMode.Html, replyParameters: replyToMessageId, cancellationToken: ct);
         }
         catch (Exception e)
         {
@@ -64,7 +64,7 @@ internal sealed class TelegramService : ITelegramService
 
         try
         {
-            await _botClient.SendTextMessageAsync(chatId: chatId, text: text, replyMarkup: replyMarkup, parseMode: ParseMode.Html, replyToMessageId: replyToMessageId, cancellationToken: ct);
+            await _botClient.SendMessage(chatId: chatId, text: text, replyMarkup: replyMarkup, parseMode: ParseMode.Html, replyParameters: replyToMessageId, cancellationToken: ct);
         }
         catch (Exception e)
         {
@@ -89,7 +89,7 @@ internal sealed class TelegramService : ITelegramService
 
         try
         {
-            await _botClient.SendTextMessageAsync(chatId: chatId, text: text, parseMode: ParseMode.Html, replyToMessageId: replyToMessageId, cancellationToken: ct);
+            await _botClient.SendMessage(chatId: chatId, text: text, parseMode: ParseMode.Html, replyParameters: replyToMessageId, cancellationToken: ct);
         }
         catch (Exception e)
         {

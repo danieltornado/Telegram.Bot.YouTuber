@@ -55,11 +55,11 @@ public static class Startup
                 e.ValidateOnBuild = true;
                 e.ValidateScopes = true;
             });
-            builder.Services.AddControllers().AddControllersAsServices().AddNewtonsoftJson();
+            builder.Services.AddControllers().AddControllersAsServices();
         }
         else
         {
-            builder.Services.AddControllers().AddNewtonsoftJson();
+            builder.Services.AddControllers();
         }
 
         builder.Services.AddHealthChecks();
@@ -68,13 +68,13 @@ public static class Startup
         builder.Services.Configure<BotConfiguration>(builder.Configuration.GetSection(BotConfiguration.SectionName));
 
         builder.Services
+            .ConfigureTelegramBotMvc()
             .AddHttpClient("telegram_bot_client")
             .AddTypedClient<ITelegramBotClient>((httpClient, provider) =>
             {
-                var options = provider.GetRequiredService<IOptions<BotConfiguration>>();
-                var botConfiguration = options.Value;
-                var botToken = botConfiguration.Token;
-                return new TelegramBotClient(botToken, httpClient);
+                var botConfiguration = provider.GetRequiredService<IOptions<BotConfiguration>>();
+                var telegramBotClientOptions = new TelegramBotClientOptions(token: botConfiguration.Value.Token);
+                return new TelegramBotClient(options: telegramBotClientOptions, httpClient: httpClient);
             });
 
         builder.Services

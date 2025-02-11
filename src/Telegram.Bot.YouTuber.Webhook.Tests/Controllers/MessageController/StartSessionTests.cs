@@ -125,8 +125,7 @@ public sealed class StartSessionTests
             Id = 1,
             Message = new()
             {
-                Date = DateTime.Now,
-                MessageId = messageId,
+                Id = messageId,
                 Chat = new()
                 {
                     Id = chatId,
