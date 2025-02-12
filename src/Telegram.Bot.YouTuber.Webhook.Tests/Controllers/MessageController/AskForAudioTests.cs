@@ -73,6 +73,9 @@ public sealed class AskForAudioTests
                         services.RemoveAll<ITelegramService>();
                         services.AddScoped<ITelegramService>(_ => telegramServiceMock.Object);
 
+                        // Moq an external interaction
+                        services.RemoveAll<IFileService>();
+
                         // Overrides behavior special for case
                         services.RemoveAll<IMessageHandling>();
                         services.AddScoped<IMessageHandling>(_ => messageHandlingMock.Object);

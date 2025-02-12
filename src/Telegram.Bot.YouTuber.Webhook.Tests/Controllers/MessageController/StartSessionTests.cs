@@ -37,7 +37,7 @@ public sealed class StartSessionTests
         long chatId = 123;
         int messageId = 456;
         long senderId = 789;
-        
+
         DbConnection? dbConnection = null;
 
         Mock<IYouTubeClient> youTubeClientMock = new();
@@ -69,6 +69,9 @@ public sealed class StartSessionTests
                         services.RemoveAll<ITelegramBotClient>();
                         services.RemoveAll<ITelegramService>();
                         services.AddScoped<ITelegramService>(_ => telegramServiceMock.Object);
+
+                        // Moq an external interaction
+                        services.RemoveAll<IFileService>();
 
                         // Overrides behavior special for case
                         services.RemoveAll<IMessageHandling>();

@@ -19,7 +19,6 @@ using Telegram.Bot.YouTuber.Webhook.BL.Abstractions.Queues;
 using Telegram.Bot.YouTuber.Webhook.BL.Abstractions.Sessions;
 using Telegram.Bot.YouTuber.Webhook.BL.Implementations;
 using Telegram.Bot.YouTuber.Webhook.BL.Implementations.Downloading;
-using JsonSerializer = System.Text.Json.JsonSerializer;
 
 namespace Telegram.Bot.YouTuber.Webhook.Tests;
 
@@ -70,7 +69,7 @@ public static class WebApplicationFactoryExtensions
     public static Task<HttpResponseMessage> PostAsync<TEntryPoint, TBody>(this WebApplicationFactory<TEntryPoint> app, string url, TBody body)
         where TEntryPoint : class
     {
-        string bodyStr = JsonSerializer.Serialize(body, JsonBotAPI.Options);
+        string bodyStr = System.Text.Json.JsonSerializer.Serialize(body, JsonBotAPI.Options);
 
         HttpRequestMessage request = new(HttpMethod.Post, url);
         request.Content = new StringContent(bodyStr, new MediaTypeHeaderValue("application/json"));
