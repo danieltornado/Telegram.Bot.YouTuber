@@ -7,6 +7,15 @@ namespace Telegram.Bot.YouTuber.Webhook.BL.Implementations;
 
 internal sealed class TelegramService : ITelegramService
 {
+    const string WelcomeMessage = @"<b>Welcome!</b>🙋
+I'm a bot who can download a file for you from youtube.com
+
+1. Input here an <b>url</b>
+2. Select one item from the <b>video</b> list 🖥
+3. Select one item from the <b>audio</b> list 🔉
+4. Wait
+5. Download the file 👍";
+    
     private readonly ITelegramBotClient _botClient;
     private readonly ILogger<TelegramService> _logger;
 
@@ -28,7 +37,7 @@ internal sealed class TelegramService : ITelegramService
 
         try
         {
-            await _botClient.SendMessage(chatId: chatId, text: "Welcome", parseMode: ParseMode.Html, cancellationToken: ct);
+            await _botClient.SendMessage(chatId: chatId, text: WelcomeMessage, parseMode: ParseMode.Html, cancellationToken: ct);
         }
         catch (Exception e)
         {
