@@ -15,7 +15,7 @@ internal sealed class TelegramService : ITelegramService
         _botClient = botClient;
         _logger = logger;
     }
-    
+
     #region Implementation of ITelegramService
 
     public async Task SendWelcomeMessageAsync(long? chatId, CancellationToken ct)
@@ -94,6 +94,25 @@ internal sealed class TelegramService : ITelegramService
         catch (Exception e)
         {
             _logger.LogError(e, "An error occured while sending keyboard message");
+        }
+    }
+
+    /// <inheritdoc />
+    public async Task SendInvalidUrlMessageAsync(long? chatId, int? replyToMessageId, CancellationToken ct)
+    {
+        if (!chatId.HasValue)
+        {
+            _logger.LogWarning("No chatId specified");
+            return;
+        }
+
+        try
+        {
+            await _botClient.SendMessage(chatId: chatId, text: "Invalid youtube url", parseMode: ParseMode.Html, cancellationToken: ct);
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, "An error occured while sending text message");
         }
     }
 

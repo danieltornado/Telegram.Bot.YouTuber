@@ -60,6 +60,17 @@ internal sealed class MessageHandling : IMessageHandling
     private async Task StartNewSession(Update update, CancellationToken ct)
     {
         var startSessionContext = _mapper.Map<StartSessionContext>(update);
+        if (IsStartCommand(startSessionContext.Url))
+        {
+            await _telegramService.SendWelcomeMessageAsync(startSessionContext.ChatId, ct);
+            return;
+        }
+
+        if (IsValidYouTubeUrl(startSessionContext.Url) is false)
+        {
+            await _telegramService.SendInvalidUrlMessageAsync(startSessionContext.ChatId, startSessionContext.MessageId, ct);
+            return;
+        }
 
         SessionContext sessionContext;
         try
@@ -71,15 +82,6 @@ internal sealed class MessageHandling : IMessageHandling
             _logger.LogError(e, "Failed to start new session");
 
             await _telegramService.SendInternalServerErrorAsync(startSessionContext.ChatId, startSessionContext.MessageId, e, ct);
-
-            return;
-        }
-
-        if (sessionContext.Url == "/start")
-        {
-            await _sessionService.CompleteSessionAsync(sessionContext.Id, ct);
-
-            await _telegramService.SendWelcomeMessageAsync(startSessionContext.ChatId, ct);
 
             return;
         }
@@ -217,5 +219,28 @@ internal sealed class MessageHandling : IMessageHandling
 
         var keyboard = _keyboardService.GetQuestionKeyboard(buttons);
         await _telegramService.SendKeyboardAsync(sessionContext.ChatId, sessionContext.MessageId, "Audio", keyboard, ct);
+    }
+
+    private bool IsStartCommand(string? url)
+    {
+        return string.Equals(url, "/start", StringComparison.InvariantCulture);
+    }
+
+    private bool IsValidYouTubeUrl(string? url)
+    {
+        // Valid cases
+        // https://www.youtube.com/watch?v=
+        // https://youtu.be/
+
+        if (url is null)
+            return false;
+
+        if (url.StartsWith("https://www.youtube.com", StringComparison.InvariantCulture))
+            return true;
+
+        if (url.StartsWith("https://youtu.be", StringComparison.InvariantCulture))
+            return true;
+
+        return false;
     }
 }

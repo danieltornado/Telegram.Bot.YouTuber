@@ -12,7 +12,7 @@ public sealed class CommonProfile : Profile
     public CommonProfile()
     {
         CreateMap<SessionMediaContext, QuestionButton>()
-            .ForMember(dest => dest.Caption, e => e.MapFrom(src => src.GetQuestionButtonCaption()))
-            .ForMember(dest => dest.Data, e => e.MapFrom((src, _) => new QuestionData { Type = src.Type, MediaId = src.Id }.ToCallbackQueryData()));
+            .ForMember(dst => dst.Caption, e => e.MapFrom(src => src.GetQuestionButtonCaption()))
+            .ForMember(dst => dst.Data, e => e.MapFrom((src, _) => new QuestionData { Type = src.Type, MediaId = src.Id }.ToCallbackQueryData()));
     }
 }

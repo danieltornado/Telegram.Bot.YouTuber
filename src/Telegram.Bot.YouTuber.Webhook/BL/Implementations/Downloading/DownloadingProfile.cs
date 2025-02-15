@@ -17,13 +17,13 @@ public sealed class DownloadingProfile : Profile
         CreateMap<DownloadingEntity, DownloadingContext>();
 
         CreateMap<YouTubeVideo, VideoInfo>()
-            .ForMember(dest => dest.Format, e => e.MapFrom(src => src.Format.ToString()))
-            .ForMember(dest => dest.Quality, e => e.MapFrom(src => src.Resolution.ToString()))
-            .ForMember(dest => dest.InternalUrl, e => e.Ignore());
+            .ForMember(dst => dst.Format, e => e.MapFrom(src => src.Format.ToString()))
+            .ForMember(dst => dst.Quality, e => e.MapFrom(src => src.Resolution.ToString()))
+            .ForMember(dst => dst.InternalUrl, e => e.Ignore());
 
         CreateMap<YouTubeVideo, AudioInfo>()
-            .ForMember(dest => dest.Format, e => e.MapFrom(src => src.AudioFormat.ToString()))
-            .ForMember(dest => dest.Quality, e => e.MapFrom(src => src.AudioBitrate.ToString()))
-            .ForMember(dest => dest.InternalUrl, e => e.Ignore());
+            .ForMember(dst => dst.Format, e => e.MapFrom(src => src.AudioFormat.ToString()))
+            .ForMember(dst => dst.Quality, e => e.MapFrom(src => src.AudioBitrate.ToString()))
+            .ForMember(dst => dst.InternalUrl, e => e.Ignore());
     }
 }

@@ -144,7 +144,7 @@ public sealed class StartSessionTests
                     FirstName = "John",
                     LastName = "Doe"
                 },
-                Text = "https://youtu.be/x5bXS2uIi00"
+                Text = "https://youtu.be/uiXS232iIu1234"
             }
         };
 

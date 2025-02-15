@@ -17,7 +17,7 @@ public static class ConfigurationExtensions
     {
         var stringUri = configuration.GetConnectionString(connectionStringName);
         if (stringUri is null)
-            throw new InvalidOperationException("Отсутствует строка подключения");
+            throw new InvalidOperationException("Connection string is missing");
 
         Uri factUri = new(stringUri);
         string[] userInfo = factUri.UserInfo.Split(':');
