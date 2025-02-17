@@ -37,13 +37,13 @@ public static class ConfigurationExtensions
     }
 
     /// <summary>
-    /// Gets a setting "PathBase"
+    /// Gets a setting "PathFile"
     /// </summary>
     /// <param name="configuration"></param>
     /// <returns></returns>
-    public static string? GetAppPathBase(this IConfiguration configuration)
+    public static string GetPathFile(this IConfiguration configuration)
     {
-        return configuration["PathBase"];
+        return configuration["PathFile"] ?? throw new InvalidOperationException("Path file is missing");
     }
 
     /// <summary>

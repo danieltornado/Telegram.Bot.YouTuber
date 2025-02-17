@@ -149,7 +149,7 @@ public sealed class StartSessionTests
         };
 
         // -------ACT----------
-        var response = await app.PostAsync("/api/message/update", telegramMessage);
+        var response = await app.PostAsync("/api/messages/update", telegramMessage);
 
         // -------ASSERT-------
 

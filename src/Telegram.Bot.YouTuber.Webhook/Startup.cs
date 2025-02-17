@@ -1,6 +1,7 @@
-﻿using System.Net;
+﻿using System.Diagnostics;
+using System.Net;
 using System.Reflection;
-using Microsoft.AspNetCore.Diagnostics;
+using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -24,6 +25,7 @@ using Telegram.Bot.YouTuber.Webhook.BL.Implementations.Media;
 using Telegram.Bot.YouTuber.Webhook.BL.Implementations.Questions;
 using Telegram.Bot.YouTuber.Webhook.BL.Implementations.Queues;
 using Telegram.Bot.YouTuber.Webhook.BL.Implementations.Sessions;
+using Telegram.Bot.YouTuber.Webhook.Services;
 
 namespace Telegram.Bot.YouTuber.Webhook;
 
@@ -88,6 +90,25 @@ public static class Startup
                 return httpClientHandler;
             });
 
+        // https://www.milanjovanovic.tech/blog/problem-details-for-aspnetcore-apis
+        // Adds services for using Problem Details format
+        builder.Services.AddProblemDetails(options =>
+        {
+            options.CustomizeProblemDetails = context =>
+            {
+                context.ProblemDetails.Instance =
+                    $"{context.HttpContext.Request.Method} {context.HttpContext.Request.Path}";
+
+                context.ProblemDetails.Extensions.TryAdd("requestId", context.HttpContext.TraceIdentifier);
+
+                Activity? activity = context.HttpContext.Features.Get<IHttpActivityFeature>()?.Activity;
+                context.ProblemDetails.Extensions.TryAdd("traceId", activity?.Id);
+            };
+        });
+
+        // https://www.milanjovanovic.tech/blog/problem-details-for-aspnetcore-apis
+        builder.Services.AddExceptionHandler<CustomExceptionHandler>();
+
         // Warn! Removing LoggingHttpMessageHandlerBuilderFilter only
         builder.Services.RemoveAll<IHttpMessageHandlerBuilderFilter>();
 
@@ -105,7 +126,8 @@ public static class Startup
             .AddScoped<IDownloadingClient, DownloadingClient>()
             .AddScoped<IDownloadingService, DownloadingService>()
             .AddScoped<IStickService, StickService>()
-            .AddScoped<IMessageHandling, MessageHandling>();
+            .AddScoped<IMessageHandling, MessageHandling>()
+            .AddScoped<ICustomLinkGenerator, CustomLinkGenerator>();
 
         builder.Services
             .AddSingleton<IFileService, FileService>()
@@ -140,12 +162,10 @@ public static class Startup
 
         app.UseRouting();
 
-        // twin configuration
-        string? pathBase = app.Configuration.GetAppPathBase();
-        if (!string.IsNullOrWhiteSpace(pathBase))
-            app.UsePathBase(pathBase);
+        // https://www.milanjovanovic.tech/blog/problem-details-for-aspnetcore-apis
+        // Converts unhandled exceptions into Problem Details responses
+        app.UseExceptionHandler();
 
-        app.UseExceptionHandler(new ExceptionHandlerOptions { ExceptionHandler = HandleException });
         app.UseHealthChecks("/healthz");
         app.MapControllers();
 
@@ -165,36 +185,10 @@ public static class Startup
     /// Executes migrations
     /// </summary>
     /// <param name="serviceProvider"></param>
-    public static async Task MigrateDbAsync(this IServiceProvider serviceProvider)
+    private static async Task MigrateDbAsync(this IServiceProvider serviceProvider)
     {
         await using var scope = serviceProvider.CreateAsyncScope();
         await using var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         await context.Database.MigrateAsync();
-    }
-
-    private static Task HandleException(HttpContext context)
-    {
-        const string internalServerErrorText = "Internal server error";
-
-        var logger = context.RequestServices.GetRequiredService<ILogger<HttpContext>>();
-        var env = context.RequestServices.GetRequiredService<IWebHostEnvironment>();
-
-        string responseMessage = internalServerErrorText;
-
-        context.Response.ContentType = "application/json";
-        context.Response.StatusCode = 500;
-
-        var exceptionHandlerPathFeature = context.Features.Get<IExceptionHandlerPathFeature>();
-        var exception = exceptionHandlerPathFeature?.Error;
-        if (exception != null)
-        {
-            if (!env.IsEnvironment("Production"))
-                responseMessage = exception.ToString();
-        }
-
-        logger.LogError(exception, "Message={Message}; Path={Path}; Method={Method}", internalServerErrorText, context.Request.Path.ToString(), context.Request.Method);
-
-        var response = new { message = responseMessage };
-        return context.Response.WriteAsJsonAsync(response);
     }
 }

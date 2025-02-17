@@ -196,7 +196,7 @@ public sealed class DownloadSessionTests
             .ReturnsAsync(fileId);
 
         // -------ACT----------
-        var response = await app.PostAsync("/api/message/update", telegramMessage);
+        var response = await app.PostAsync("/api/messages/update", telegramMessage);
 
         // ------ASSERT--------
 
@@ -222,7 +222,7 @@ public sealed class DownloadSessionTests
 
         // check: audio question has been sent
         telegramServiceMock
-            .Verify(e => e.SendMessageAsync(chatId, messageId, $"http://localhost/api/files/{fileId:D}", It.IsAny<CancellationToken>()), Times.Once);
+            .Verify(e => e.SendMessageAsync(chatId, messageId, $"http://localhost/test/{fileId:D}", It.IsAny<CancellationToken>()), Times.Once);
 
         // stopping
         await app.StopHostedServicesAsync();

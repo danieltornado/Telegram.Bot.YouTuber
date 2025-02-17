@@ -59,16 +59,9 @@ internal sealed class WorkerInstance : IWorkerInstance
 
                 var fileId = await downloadingClient.DownloadAsync(context.Id, video, audio, tokenSource.Token);
 
-                var linkGenerator = scope.ServiceProvider.GetRequiredService<LinkGenerator>();
+                var linkGenerator = scope.ServiceProvider.GetRequiredService<ICustomLinkGenerator>();
                 var link = linkGenerator.GenerateFileLink(fileId, context.RequestContext);
-                if (link is null)
-                {
-                    await telegramService.SendMessageAsync(context.ChatId, context.MessageId, "An error occured during generating link", ct);
-                }
-                else
-                {
-                    await telegramService.SendMessageAsync(context.ChatId, context.MessageId, link, ct);
-                }
+                await telegramService.SendMessageAsync(context.ChatId, context.MessageId, link, ct);
             }
         }
         catch (Exception e)

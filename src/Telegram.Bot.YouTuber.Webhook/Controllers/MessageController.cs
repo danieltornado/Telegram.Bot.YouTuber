@@ -1,28 +1,31 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Telegram.Bot.Types;
 using Telegram.Bot.YouTuber.Webhook.BL.Abstractions;
+using Telegram.Bot.YouTuber.Webhook.Extensions;
 
 namespace Telegram.Bot.YouTuber.Webhook.Controllers;
 
 [ApiController]
-[Route("api/message")]
+[Route("api/messages")]
 public sealed class MessageController : ControllerBase
 {
     private readonly IServiceProvider _serviceProvider;
+    private readonly IConfiguration _configuration;
 
-    public MessageController(IServiceProvider serviceProvider)
+    public MessageController(IServiceProvider serviceProvider, IConfiguration configuration)
     {
         _serviceProvider = serviceProvider;
+        _configuration = configuration;
     }
 
     [HttpPost("update")]
-    public IActionResult HandleMessage([FromBody] Update update, CancellationToken ct)
+    public IActionResult HandleMessage([FromBody] Update update)
     {
         RequestContext requestContext = new()
         {
             Host = Request.Host,
             Scheme = Request.Scheme,
-            PathBase = Request.PathBase,
+            PathFile = _configuration.GetPathFile(),
         };
 
         _ = StartHandling(update, requestContext);

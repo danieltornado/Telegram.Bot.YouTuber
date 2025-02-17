@@ -2,7 +2,10 @@
 
 public sealed class RequestContext
 {
-    public required string Scheme { get; init; } = "https://";
-    public required PathString PathBase { get; init; }
+    /// <summary>
+    /// Scheme: https://
+    /// </summary>
+    public required string Scheme { get; init; }
+    public required string PathFile { get; init; }
     public required  HostString Host { get; init; }
 }

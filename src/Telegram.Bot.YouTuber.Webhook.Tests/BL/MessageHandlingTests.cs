@@ -75,7 +75,7 @@ public sealed class MessageHandlingTests
         {
             Host = HostString.FromUriComponent("localhost:5000"),
             Scheme = "http",
-            PathBase = "/pathBase"
+            PathFile = "/pathBase"
         };
 
         _sessionServiceMock
@@ -134,7 +134,7 @@ public sealed class MessageHandlingTests
         {
             Host = HostString.FromUriComponent("localhost:5000"),
             Scheme = "http",
-            PathBase = "/pathBase"
+            PathFile = "/pathBase"
         };
 
         _sessionServiceMock
