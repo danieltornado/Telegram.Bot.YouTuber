@@ -143,10 +143,8 @@ public static class Startup
         return builder;
     }
 
-    public static WebApplication ConfigurePipeline(this WebApplicationBuilder builder)
+    public static WebApplication ConfigurePipeline(this WebApplication app)
     {
-        var app = builder.Build();
-
         // Proxing nginx.
         app.UseForwardedHeaders(new ForwardedHeadersOptions
         {

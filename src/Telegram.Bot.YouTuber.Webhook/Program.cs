@@ -16,6 +16,7 @@ public class Program
             var app = WebApplication
                 .CreateBuilder(args)
                 .ConfigureServices()
+                .Build()
                 .ConfigurePipeline();
 
             await app.MigrateDbAsync();
