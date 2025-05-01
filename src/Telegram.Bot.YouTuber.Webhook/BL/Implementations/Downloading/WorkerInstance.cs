@@ -61,7 +61,7 @@ internal sealed class WorkerInstance : IWorkerInstance
 
                 var linkGenerator = scope.ServiceProvider.GetRequiredService<ICustomLinkGenerator>();
                 var link = linkGenerator.GenerateFileLink(fileId, context.RequestContext);
-                await telegramService.SendMessageAsync(context.ChatId, context.MessageId, link, ct);
+                await telegramService.SendMessageAsync(context.ChatId, context.MessageId, link, tokenSource.Token);
             }
         }
         catch (Exception e)

@@ -1,7 +1,4 @@
-// Early init of NLog to allow startup and exception logging, before host is built
-
-using NLog;
-using NLog.Web;
+using Serilog;
 
 namespace Telegram.Bot.YouTuber.Webhook;
 
@@ -9,7 +6,15 @@ public class Program
 {
     public static async Task Main(string[] args)
     {
-        var logger = LogManager.Setup().LoadConfigurationFromAppSettings().GetCurrentClassLogger();
+        // https://github.com/serilog/serilog-aspnetcore
+        // https://github.com/serilog/serilog-settings-configuration
+        // https://github.com/serilog/serilog/wiki/Formatting-Output
+        // https://github.com/serilog/serilog-aspnetcore/tree/dev/samples/Sample
+        // https://github.com/serilog/serilog-sinks-rollingfile
+        Log.Logger = new LoggerConfiguration()
+            .Enrich.FromLogContext()
+            .WriteTo.Console()
+            .CreateBootstrapLogger();
 
         try
         {
@@ -24,14 +29,11 @@ public class Program
         }
         catch (Exception e)
         {
-            // NLog: catch setup errors
-            logger.Error(e, "Stopped program because of exception");
-            throw;
+            Log.Fatal(e, "Stopped program because of exception");
         }
         finally
         {
-            // Ensure to flush and stop internal timers/threads before application-exit (Avoid segmentation fault on Linux)
-            LogManager.Shutdown();
+            await Log.CloseAndFlushAsync();
         }
     }
 }

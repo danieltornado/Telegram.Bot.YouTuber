@@ -7,8 +7,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Http;
 using Microsoft.Extensions.Options;
-using NLog;
-using NLog.Extensions.Logging;
+using Serilog;
 using Telegram.Bot.YouTuber.Core.Settings;
 using Telegram.Bot.YouTuber.Webhook.DataAccess;
 using Telegram.Bot.YouTuber.Webhook.Extensions;
@@ -39,14 +38,8 @@ public static class Startup
             .AddUserSecrets(Assembly.GetExecutingAssembly(), optional: true)
             .AddEnvironmentVariables();
 
-        builder.Services
-            .AddLogging(logging =>
-            {
-                logging.ClearProviders();
-                logging.AddNLog();
-                logging.AddConfiguration(builder.Configuration.GetSection("Logging"));
-                LogManager.Configuration = new NLogLoggingConfiguration(builder.Configuration.GetSection("NLog"));
-            });
+        // Can don't clear providers
+        builder.Services.AddSerilog(cfg => cfg.ReadFrom.Configuration(builder.Configuration));
 
         // Add services to the container.
 
@@ -150,6 +143,9 @@ public static class Startup
         {
             ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
         });
+        
+        // Smart logging
+        app.UseSerilogRequestLogging();
 
         // microsoft:
         //  Deactivate HTTPS Redirection Middleware in the Development environment (Program.cs)

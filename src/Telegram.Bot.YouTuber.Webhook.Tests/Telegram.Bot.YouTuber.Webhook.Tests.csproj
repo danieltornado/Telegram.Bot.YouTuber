@@ -10,27 +10,22 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="AutoFixture" Version="4.18.1" />
-        <PackageReference Include="coverlet.collector" Version="6.0.0"/>
-        <PackageReference Include="FluentAssertions" Version="6.12.1" />
-        <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="8.0.12" />
-        <PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.12" />
-        <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="8.0.12" />
-        <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="8.0.12" />
-        <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.1" />
-        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.8.0"/>
-        <PackageReference Include="Moq" Version="4.18.4" />
-        <PackageReference Include="Telegram.Bot" Version="22.3.0" />
-        <PackageReference Include="xunit" Version="2.5.3"/>
-        <PackageReference Include="xunit.runner.visualstudio" Version="2.5.3"/>
-    </ItemGroup>
-
-    <ItemGroup>
-        <Using Include="Xunit"/>
+        <PackageReference Include="AutoFixture"/>
+        <PackageReference Include="coverlet.collector"/>
+        <PackageReference Include="FluentAssertions"/>
+        <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing"/>
+        <PackageReference Include="Microsoft.EntityFrameworkCore"/>
+        <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory"/>
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite"/>
+        <PackageReference Include="Microsoft.Extensions.DependencyInjection"/>
+        <PackageReference Include="Microsoft.NET.Test.Sdk"/>
+        <PackageReference Include="Moq" />
+        <PackageReference Include="Telegram.Bot"/>
+        <PackageReference Include="xunit"/>
+        <PackageReference Include="xunit.runner.visualstudio"/>
     </ItemGroup>
 
     <ItemGroup>
       <ProjectReference Include="..\Telegram.Bot.YouTuber.Webhook\Telegram.Bot.YouTuber.Webhook.csproj" />
     </ItemGroup>
-
 </Project>
