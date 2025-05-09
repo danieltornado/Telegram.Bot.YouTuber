@@ -39,7 +39,15 @@ public static class Startup
             .AddEnvironmentVariables();
 
         // Can don't clear providers
-        builder.Services.AddSerilog(cfg => cfg.ReadFrom.Configuration(builder.Configuration));
+        if (builder.Environment.IsTest())
+        {
+            // fix: The entry point exited without ever building an IHost
+            builder.Services.AddSerilog();
+        }
+        else
+        {
+            builder.Services.AddSerilog(cfg => cfg.ReadFrom.Configuration(builder.Configuration));
+        }
 
         // Add services to the container.
 

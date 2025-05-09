@@ -206,8 +206,8 @@ public static class WebApplicationFactoryExtensions
     /// </summary>
     /// <param name="builder"></param>
     /// <returns></returns>
-    public static IConfigurationBuilder AddAppSettingsTestJson(this IConfigurationBuilder builder)
+    public static void AddAppSettingsTestJson(this IConfigurationBuilder builder)
     {
-        return builder.AddJsonFile("appsettings.Test.json");
+        builder.AddJsonFile("appsettings.Test.json");
     }
 }
