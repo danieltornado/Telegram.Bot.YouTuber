@@ -193,7 +193,7 @@ public sealed class DownloadSessionTests
 
         // moq
         downloadingClientMock
-            .Setup(e => e.DownloadAsync(It.IsAny<Guid>(), It.IsAny<SessionMediaContext>(), It.IsAny<SessionMediaContext>(), It.IsAny<CancellationToken>()))
+            .Setup(e => e.DownloadAsync(It.IsAny<SessionContext>(), It.IsAny<SessionMediaContext>(), It.IsAny<SessionMediaContext>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(fileId);
 
         // -------ACT----------

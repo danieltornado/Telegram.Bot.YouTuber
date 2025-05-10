@@ -16,6 +16,8 @@ I'm a bot who can download a file for you from youtube.com
 4. Wait
 5. Download the file 👍";
 
+    private const string WebmAacWarningMessage = @"⚠️ <b>WEBM + AAC</b> will be converted to <b>MKV</b>";
+
     private readonly ITelegramBotClient _botClient;
     private readonly ILogger<TelegramService> _logger;
 
@@ -117,7 +119,26 @@ I'm a bot who can download a file for you from youtube.com
 
         try
         {
-            await _botClient.SendMessage(chatId: chatId, text: "Invalid youtube url", parseMode: ParseMode.Html, cancellationToken: ct);
+            await _botClient.SendMessage(chatId: chatId, text: "Invalid youtube url", parseMode: ParseMode.Html, replyParameters: replyToMessageId, cancellationToken: ct);
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, "An error occured while sending text message");
+        }
+    }
+
+    /// <inheritdoc />
+    public async Task SendWarningWebmAacAsync(long? chatId, CancellationToken ct)
+    {
+        if (!chatId.HasValue)
+        {
+            _logger.LogWarning("No chatId specified");
+            return;
+        }
+
+        try
+        {
+            await _botClient.SendMessage(chatId: chatId, text: WebmAacWarningMessage, parseMode: ParseMode.Html, cancellationToken: ct);
         }
         catch (Exception e)
         {

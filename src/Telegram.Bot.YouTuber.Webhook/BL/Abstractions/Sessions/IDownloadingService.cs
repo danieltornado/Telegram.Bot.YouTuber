@@ -9,4 +9,5 @@ public interface IDownloadingService
     Task CompleteDownloadingAsync(Guid downloadingId, CancellationToken ct);
     Task<DownloadingContext?> GetDownloadingAsync(Guid downloadingId, CancellationToken ct);
     Task SetFailedDownloadingAsync(Guid downloadingId, string error, CancellationToken ct);
+    Task UpdateDownloadingVideoExtensionAsync(Guid downloadingId, string videoExtension, CancellationToken ct);
 }

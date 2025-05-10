@@ -13,24 +13,28 @@ internal sealed class DownloadingClient : IDownloadingClient
     private readonly IFileService _fileService;
     private readonly IStickService _stickService;
     private readonly IDownloadingService _downloadingService;
+    private readonly ITelegramService _telegramService;
 
     public DownloadingClient(
         IYouTubeClient youTubeClient,
         IFileService fileService,
         IStickService stickService,
-        IDownloadingService downloadingService)
+        IDownloadingService downloadingService,
+        ITelegramService telegramService)
     {
         _youTubeClient = youTubeClient;
         _fileService = fileService;
         _stickService = stickService;
         _downloadingService = downloadingService;
+        _telegramService = telegramService;
     }
 
     #region Implementation of IDownloadService
 
-    public async Task<Guid> DownloadAsync(Guid sessionId, SessionMediaContext video, SessionMediaContext audio, CancellationToken ct)
+    /// <inheritdoc />
+    public async Task<Guid> DownloadAsync(SessionContext session, SessionMediaContext video, SessionMediaContext audio, CancellationToken ct)
     {
-        var downloadingId = await _downloadingService.StartDownloadingAsync(sessionId, video, audio, ct);
+        var downloadingId = await _downloadingService.StartDownloadingAsync(session.Id, video, audio, ct);
 
         try
         {
@@ -71,6 +75,17 @@ internal sealed class DownloadingClient : IDownloadingClient
             else
             {
                 var extension = video.GetExtension();
+
+                // warning about combining webm+aac
+                if (string.Equals(video.Format, "webm", StringComparison.InvariantCultureIgnoreCase) && string.Equals(audio.Format, "aac", StringComparison.InvariantCultureIgnoreCase))
+                {
+                    extension = ".mkv";
+
+                    await _telegramService.SendWarningWebmAacAsync(session.ChatId, ct);
+
+                    // 1a. set a new video extension
+                    await _downloadingService.UpdateDownloadingVideoExtensionAsync(downloadingId, extension, ct);
+                }
 
                 // 1. download video
                 string videoPath = _fileService.GenerateVideoFilePath(downloadingId);

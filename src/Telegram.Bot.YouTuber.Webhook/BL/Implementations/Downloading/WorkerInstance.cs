@@ -57,7 +57,7 @@ internal sealed class WorkerInstance : IWorkerInstance
                 using var tokenSource = CancellationTokenSource.CreateLinkedTokenSource(ct);
                 tokenSource.CancelAfter(TimeSpan.FromHours(2));
 
-                var fileId = await downloadingClient.DownloadAsync(context.Id, video, audio, tokenSource.Token);
+                var fileId = await downloadingClient.DownloadAsync(context, video, audio, tokenSource.Token);
 
                 var linkGenerator = scope.ServiceProvider.GetRequiredService<ICustomLinkGenerator>();
                 var link = linkGenerator.GenerateFileLink(fileId, context.RequestContext);

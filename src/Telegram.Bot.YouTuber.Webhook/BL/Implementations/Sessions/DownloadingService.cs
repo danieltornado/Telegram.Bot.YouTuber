@@ -84,14 +84,27 @@ internal sealed class DownloadingService : IDownloadingService
         {
             await _dbContext.Downloading
                 .Where(e => e.Id == downloadingId)
-                .ExecuteUpdateAsync(e =>
-                        e.SetProperty(s => s.UpdatedAt, DateTime.UtcNow).SetProperty(s => s.Error, error),
+                .ExecuteUpdateAsync(
+                    e => e
+                        .SetProperty(s => s.UpdatedAt, DateTime.UtcNow)
+                        .SetProperty(s => s.Error, error), 
                     ct);
         }
         catch (Exception e)
         {
             _logger.LogError(e, "Failed to complete downloading: {Id}", downloadingId);
         }
+    }
+
+    /// <inheritdoc />
+    public async Task UpdateDownloadingVideoExtensionAsync(Guid downloadingId, string videoExtension, CancellationToken ct)
+    {
+        await _dbContext.Downloading
+            .Where(e => e.Id == downloadingId)
+            .ExecuteUpdateAsync(
+                e => e
+                    .SetProperty(s => s.VideoExtension, videoExtension), 
+                ct);
     }
 
     #endregion
