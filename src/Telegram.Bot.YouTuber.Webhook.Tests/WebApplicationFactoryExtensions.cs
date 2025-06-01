@@ -169,6 +169,7 @@ public static class WebApplicationFactoryExtensions
                     var originalHandling = new WorkerInstance(
                         serviceProvider: serviceProviderScoped,
                         freeWorkersService: serviceProviderScoped.GetRequiredService<IFreeWorkersService>(),
+                        fileService: serviceProviderScoped.GetRequiredService<IFileService>(),
                         logger: serviceProviderScoped.GetRequiredService<ILogger<WorkerInstance>>());
 
                     await originalHandling.ProcessAsync(sessionContext, ct);

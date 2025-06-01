@@ -66,7 +66,7 @@ public sealed class CleanHostedService : BackgroundService
                 {
                     dbContext.Remove(downloadingEntity);
 
-                    await fileService.DeleteDownloadingAsync(downloadingEntity.Id, ct);
+                    await fileService.DeleteDownloading(downloadingEntity.Id, ct);
                 }
             }
         }

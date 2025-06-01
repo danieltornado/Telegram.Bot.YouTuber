@@ -11,13 +11,15 @@ internal sealed class WorkerInstance : IWorkerInstance
 {
     private readonly IServiceProvider _serviceProvider;
     private readonly IFreeWorkersService _workersQueueService;
+    private readonly IFileService _fileService;
     private readonly ILogger<WorkerInstance> _logger;
     private readonly int _workerId;
 
-    public WorkerInstance(IServiceProvider serviceProvider, IFreeWorkersService freeWorkersService, ILogger<WorkerInstance> logger)
+    public WorkerInstance(IServiceProvider serviceProvider, IFreeWorkersService freeWorkersService, IFileService fileService, ILogger<WorkerInstance> logger)
     {
         _serviceProvider = serviceProvider;
         _workersQueueService = freeWorkersService;
+        _fileService = fileService;
         _logger = logger;
         _workerId = freeWorkersService.GenerateUniqueWorkerId();
     }
@@ -46,6 +48,9 @@ internal sealed class WorkerInstance : IWorkerInstance
             if (audio is null)
                 throw new EntityNotFoundException("Media not found");
 
+            // check available space
+            await _fileService.ThrowIfDoesNotHasAvailableFreeSpace(ct, video, audio);
+
             if (video.IsSkipped && audio.IsSkipped)
             {
                 await telegramService.SendMessageAsync(context.ChatId, context.MessageId, "Nothing to download", ct);
@@ -63,6 +68,14 @@ internal sealed class WorkerInstance : IWorkerInstance
                 var link = linkGenerator.GenerateFileLink(fileId, context.RequestContext);
                 await telegramService.SendMessageAsync(context.ChatId, context.MessageId, link, tokenSource.Token);
             }
+        }
+        catch (NotAvailableSpaceException e)
+        {
+            _logger.LogError(e, "Download service failed");
+
+            await sessionService.SetFailedSessionAsync(context.Id, e.ToString(), ct);
+
+            await telegramService.SendMessageAsync(context.ChatId, context.MessageId, "Service is too busy. Please, try again later", ct);
         }
         catch (Exception e)
         {

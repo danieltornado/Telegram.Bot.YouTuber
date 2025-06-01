@@ -1,5 +1,6 @@
 ﻿using System.Reflection;
 using Telegram.Bot.YouTuber.Webhook.BL.Abstractions;
+using Telegram.Bot.YouTuber.Webhook.BL.Abstractions.Sessions;
 
 namespace Telegram.Bot.YouTuber.Webhook.BL.Implementations;
 
@@ -56,7 +57,7 @@ public sealed class FileService : IFileService
         return null;
     }
 
-    public Task DeleteDownloadingAsync(Guid downloadingId, CancellationToken ct)
+    public Task DeleteDownloading(Guid downloadingId, CancellationToken ct)
     {
         string directory = GetSessionDirectory(downloadingId);
         if (!Directory.Exists(directory))
@@ -69,6 +70,25 @@ public sealed class FileService : IFileService
         }
 
         Directory.Delete(directory, false);
+        return Task.CompletedTask;
+    }
+
+    /// <inheritdoc />
+    public Task ThrowIfDoesNotHasAvailableFreeSpace(CancellationToken ct, SessionMediaContext media, params SessionMediaContext[] medias)
+    {
+        var path = Assembly.GetExecutingAssembly().Location;
+        var diskAvailableSpace = new DriveInfo(path).AvailableFreeSpace;
+        var availableSpace = diskAvailableSpace - 1024 * 1024 * 1024; // disk available space minus 1Gb
+
+        long totalSize = media.ContentLength.GetValueOrDefault();
+        foreach (var item in medias)
+        {
+            totalSize += item.ContentLength.GetValueOrDefault();
+        }
+
+        if (totalSize > availableSpace)
+            throw new NotAvailableSpaceException();
+
         return Task.CompletedTask;
     }
 
