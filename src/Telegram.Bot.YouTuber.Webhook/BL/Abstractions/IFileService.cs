@@ -10,5 +10,5 @@ public interface IFileService
     Stream? OpenFinalFile(Guid fileId);
     Task DeleteDownloading(Guid downloadingId, CancellationToken ct);
 
-    Task ThrowIfDoesNotHasAvailableFreeSpace(CancellationToken ct, SessionMediaContext media, params SessionMediaContext[] medias);
+    Task ThrowIfDoesNotHasAvailableFreeSpace(SessionMediaContext video, SessionMediaContext audio, CancellationToken ct);
 }

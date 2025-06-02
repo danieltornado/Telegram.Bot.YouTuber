@@ -74,17 +74,13 @@ public sealed class FileService : IFileService
     }
 
     /// <inheritdoc />
-    public Task ThrowIfDoesNotHasAvailableFreeSpace(CancellationToken ct, SessionMediaContext media, params SessionMediaContext[] medias)
+    public Task ThrowIfDoesNotHasAvailableFreeSpace(SessionMediaContext video, SessionMediaContext audio, CancellationToken ct)
     {
         var path = Assembly.GetExecutingAssembly().Location;
         var diskAvailableSpace = new DriveInfo(path).AvailableFreeSpace;
         var availableSpace = diskAvailableSpace - 1024 * 1024 * 1024; // disk available space minus 1Gb
 
-        long totalSize = media.ContentLength.GetValueOrDefault();
-        foreach (var item in medias)
-        {
-            totalSize += item.ContentLength.GetValueOrDefault();
-        }
+        long totalSize = video.ContentLength.GetValueOrDefault() + audio.ContentLength.GetValueOrDefault();
 
         if (totalSize > availableSpace)
             throw new NotAvailableSpaceException();

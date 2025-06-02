@@ -49,7 +49,7 @@ internal sealed class WorkerInstance : IWorkerInstance
                 throw new EntityNotFoundException("Media not found");
 
             // check available space
-            await _fileService.ThrowIfDoesNotHasAvailableFreeSpace(ct, video, audio);
+            await _fileService.ThrowIfDoesNotHasAvailableFreeSpace(video, audio, ct);
 
             if (video.IsSkipped && audio.IsSkipped)
             {

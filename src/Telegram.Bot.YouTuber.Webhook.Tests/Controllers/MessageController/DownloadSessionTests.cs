@@ -260,7 +260,7 @@ public sealed class DownloadSessionTests
 
         // moq "doesn't has available space"
         fileServiceMock
-            .Setup(e => e.ThrowIfDoesNotHasAvailableFreeSpace(It.IsAny<CancellationToken>(), It.IsAny<SessionMediaContext>(), It.IsAny<SessionMediaContext[]>()))
+            .Setup(e => e.ThrowIfDoesNotHasAvailableFreeSpace(It.IsAny<SessionMediaContext>(), It.IsAny<SessionMediaContext>(), It.IsAny<CancellationToken>()))
             .Throws<NotAvailableSpaceException>();
 
         await using var app = new WebApplicationFactory<Program>()
