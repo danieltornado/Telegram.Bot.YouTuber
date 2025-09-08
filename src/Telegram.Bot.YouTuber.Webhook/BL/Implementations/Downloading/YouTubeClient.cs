@@ -94,7 +94,7 @@ internal sealed class YouTubeClient : YouTube, IYouTubeClient
             return (Video: resultVideo, Audio: resultAudio);
         }
 
-        return (Video: Array.Empty<VideoInfo>(), Audio: Array.Empty<AudioInfo>());
+        return (Video: [], Audio: []);
     }
 
     #endregion

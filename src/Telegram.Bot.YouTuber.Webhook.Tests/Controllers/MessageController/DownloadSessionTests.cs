@@ -258,7 +258,7 @@ public sealed class DownloadSessionTests
         // single worker
         Mock<IWorkerInstance> workerInstanceMock = new();
 
-        // moq "doesn't has available space"
+        // moq "doesn't have available space"
         fileServiceMock
             .Setup(e => e.ThrowIfDoesNotHasAvailableFreeSpace(It.IsAny<SessionMediaContext>(), It.IsAny<SessionMediaContext>(), It.IsAny<CancellationToken>()))
             .Throws<NotAvailableSpaceException>();
