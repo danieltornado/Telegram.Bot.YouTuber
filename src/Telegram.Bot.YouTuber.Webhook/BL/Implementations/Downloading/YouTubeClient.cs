@@ -56,7 +56,7 @@ internal sealed class YouTubeClient : YouTube, IYouTubeClient
 
                 var stream = await response.Content.ReadAsStreamAsync(ct);
 
-                //File Steam
+                // File Stream
                 var buffer = new byte[81920];
                 int bytesCopied;
                 do

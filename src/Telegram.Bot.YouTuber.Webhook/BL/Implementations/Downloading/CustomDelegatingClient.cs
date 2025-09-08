@@ -4,7 +4,7 @@ namespace Telegram.Bot.YouTuber.Webhook.BL.Implementations.Downloading;
 
 internal sealed class CustomDelegatingClient : DelegatingClient
 {
-    private readonly IHttpClientFactory _httpClientFactory;
+    private readonly IHttpClientFactory? _httpClientFactory;
 
     public CustomDelegatingClient(IHttpClientFactory httpClientFactory)
     {
@@ -15,7 +15,8 @@ internal sealed class CustomDelegatingClient : DelegatingClient
 
     protected override HttpClient MakeClient(HttpMessageHandler handler)
     {
-        return _httpClientFactory.CreateClient("youtube_delegating_client");
+        // Delegating client has a call of the MakeClient
+        return _httpClientFactory?.CreateClient("youtube_delegating_client")!;
     }
 
     protected override HttpMessageHandler MakeHandler()

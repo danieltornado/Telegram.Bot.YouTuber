@@ -1,5 +1,4 @@
-﻿using AutoMapper;
-using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using Telegram.Bot.Types;
@@ -26,7 +25,7 @@ public sealed class MessageHandlingTests
 
     public MessageHandlingTests()
     {
-        var mapperConfig = new MapperConfiguration(config => config.AddMaps(typeof(CommonProfile)));
+        var mapperConfigure = new MapperConfigure();
 
         _messageHandling = new MessageHandling(
             sessionService: _sessionServiceMock.Object,
@@ -34,7 +33,7 @@ public sealed class MessageHandlingTests
             youTubeClient: _youTubeClientMock.Object,
             keyboardService: _keyboardServiceMock.Object,
             sessionQueueService: _sessionQueueServiceMock.Object,
-            mapper: mapperConfig.CreateMapper(),
+            mapper: mapperConfigure.Mapper,
             logger: NullLogger<MessageHandling>.Instance);
     }
 

@@ -2,7 +2,7 @@
 using Telegram.Bot.YouTuber.Webhook.BL;
 using Xunit;
 
-namespace Telegram.Bot.YouTuber.Webhook.Tests.Extensions;
+namespace Telegram.Bot.YouTuber.Webhook.Tests.BL;
 
 public sealed class BytesToHumanTests
 {
