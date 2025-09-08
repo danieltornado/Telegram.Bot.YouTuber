@@ -51,8 +51,7 @@ internal sealed class YouTubeClient : YouTube, IYouTubeClient
             {
                 // Download Stream
                 var response = await httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, ct);
-                if (response.IsSuccessStatusCode)
-                    response.EnsureSuccessStatusCode();
+                response.EnsureSuccessStatusCode();
 
                 var stream = await response.Content.ReadAsStreamAsync(ct);
 
